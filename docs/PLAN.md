@@ -119,7 +119,7 @@ graph TD
   - `cdk.context.json` committed to source control
   - `"aws:cdk:disable-stack-trace": true` in `cdk.json`
 
-- [ ] **T4: Shared Render Library**
+- [x] **T4: Shared Render Library**
   Create internal package (`@site/renderer`) that converts markdown + template + variables into final HTML. Uses `unified` + `remark-parse` + `remark-gfm` + `remark-math` + `rehype-stringify` + `rehype-highlight` + `rehype-katex` + `gray-matter` + `handlebars`. Must work in both Node.js (Lambda) and browser. Include `rehype-sanitize` for server-side use. Include unit tests for rendering edge cases.
 
 - [ ] **T5: Frontend Scaffold**
