@@ -41,11 +41,10 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       indexName: "UsernameIndex",
       partitionKey: { name: "username", type: dynamodb.AttributeType.STRING },
     });
-    // Phase 2: KeyHashIndex deferred for prod (1 GSI per table per update)
-    // this.sitesTable.addGlobalSecondaryIndex({
-    //   indexName: "KeyHashIndex",
-    //   partitionKey: { name: "keyHash", type: dynamodb.AttributeType.STRING },
-    // });
+    this.sitesTable.addGlobalSecondaryIndex({
+      indexName: "KeyHashIndex",
+      partitionKey: { name: "keyHash", type: dynamodb.AttributeType.STRING },
+    });
 
     this.templatesTable = new dynamodb.Table(this, "TemplatesTable", {
       partitionKey: {
@@ -65,11 +64,10 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
         type: dynamodb.AttributeType.STRING,
       },
     });
-    // Phase 2: SlugIndex deferred for prod (1 GSI per table per update)
-    // this.templatesTable.addGlobalSecondaryIndex({
-    //   indexName: "SlugIndex",
-    //   partitionKey: { name: "slug", type: dynamodb.AttributeType.STRING },
-    // });
+    this.templatesTable.addGlobalSecondaryIndex({
+      indexName: "SlugIndex",
+      partitionKey: { name: "slug", type: dynamodb.AttributeType.STRING },
+    });
 
     this.reportsTable = new dynamodb.Table(this, "ReportsTable", {
       partitionKey: { name: "reportId", type: dynamodb.AttributeType.STRING },
