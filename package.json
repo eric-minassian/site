@@ -1,0 +1,10 @@
+{
+  "name": "site",
+  "private": true,
+  "description": "Free managed personal-site platform",
+  "scripts": {
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "build": "pnpm -r run build"
+  }
+}
