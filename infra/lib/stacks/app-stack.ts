@@ -1,5 +1,7 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 import * as cdk from "aws-cdk-lib";
+import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
@@ -8,7 +10,7 @@ import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import type * as s3 from "aws-cdk-lib/aws-s3";
+import * as s3 from "aws-cdk-lib/aws-s3";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import { NagSuppressions } from "cdk-nag";
@@ -159,6 +161,99 @@ export class AppStack extends cdk.Stack {
       },
     );
 
+    // --- CloudFront Sites Distribution ---
+
+    const sitesKvs = new cloudfront.KeyValueStore(this, "SitesKvs", {
+      comment: "Routing data for user sites (suspension list and custom domain mappings)",
+    });
+
+    const routerFunctionCode = fs.readFileSync(
+      path.join(__dirname, "../cf-functions/router.js"),
+      "utf-8",
+    );
+
+    const routerFunction = new cloudfront.Function(this, "SitesRouterFunction", {
+      code: cloudfront.FunctionCode.fromInline(routerFunctionCode),
+      runtime: cloudfront.FunctionRuntime.JS_2_0,
+      keyValueStore: sitesKvs,
+      comment: "Routes requests by subdomain/custom domain to S3 site paths",
+    });
+
+    const sitesResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(
+      this,
+      "SitesResponseHeadersPolicy",
+      {
+        comment: "Security headers for user-generated sites",
+        securityHeadersBehavior: {
+          contentSecurityPolicy: {
+            contentSecurityPolicy: "script-src 'none'; frame-ancestors 'none'",
+            override: true,
+          },
+          contentTypeOptions: { override: true },
+          frameOptions: {
+            frameOption: cloudfront.HeadersFrameOption.DENY,
+            override: true,
+          },
+          strictTransportSecurity: {
+            accessControlMaxAge: cdk.Duration.days(365),
+            includeSubdomains: true,
+            override: true,
+          },
+        },
+      },
+    );
+
+    const sitesCachePolicy = new cloudfront.CachePolicy(
+      this,
+      "SitesCachePolicy",
+      {
+        comment: "24h default TTL for user sites",
+        defaultTtl: cdk.Duration.hours(24),
+        minTtl: cdk.Duration.seconds(0),
+        maxTtl: cdk.Duration.days(365),
+        enableAcceptEncodingGzip: true,
+        enableAcceptEncodingBrotli: true,
+      },
+    );
+
+    const sitesDistributionProps: cloudfront.DistributionProps = {
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(
+          s3.Bucket.fromBucketName(
+            this,
+            "SitesBucketRef",
+            props.sitesBucket.bucketName,
+          ),
+        ),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+        cachePolicy: sitesCachePolicy,
+        responseHeadersPolicy: sitesResponseHeadersPolicy,
+        functionAssociations: [
+          {
+            function: routerFunction,
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+          },
+        ],
+      },
+      ...(props.config.sitesDomainName && props.config.sitesCertificateArn
+        ? {
+            domainNames: [`*.${props.config.sitesDomainName}`],
+            certificate: acm.Certificate.fromCertificateArn(
+              this,
+              "SitesCert",
+              props.config.sitesCertificateArn,
+            ),
+          }
+        : {}),
+    };
+
+    const sitesDistribution = new cloudfront.Distribution(
+      this,
+      "SitesDistribution",
+      sitesDistributionProps,
+    );
+
     // --- Outputs ---
 
     this.apiUrl = new cdk.CfnOutput(this, "ApiUrl", {
@@ -169,6 +264,11 @@ export class AppStack extends cdk.Stack {
     new cdk.CfnOutput(this, "ApiDistributionUrl", {
       value: `https://${apiDistribution.distributionDomainName}`,
       description: "API CloudFront distribution URL",
+    });
+
+    new cdk.CfnOutput(this, "SitesDistributionUrl", {
+      value: `https://${sitesDistribution.distributionDomainName}`,
+      description: "Sites CloudFront distribution URL",
     });
 
     // --- cdk-nag suppressions ---
@@ -204,6 +304,29 @@ export class AppStack extends cdk.Stack {
         id: "AwsSolutions-CFR2",
         reason:
           "WAF not required for API distribution; rate limiting handled at application level",
+      },
+      {
+        id: "AwsSolutions-CFR3",
+        reason:
+          "Access logging not enabled for cost optimization; can be enabled for debugging when needed",
+      },
+      {
+        id: "AwsSolutions-CFR4",
+        reason:
+          "Using default CloudFront domain without custom certificate; TLS 1.2 enforced when custom domain is added",
+      },
+    ]);
+
+    NagSuppressions.addResourceSuppressions(sitesDistribution, [
+      {
+        id: "AwsSolutions-CFR1",
+        reason:
+          "WAF not required for sites distribution; static content only with CSP script-src 'none'",
+      },
+      {
+        id: "AwsSolutions-CFR2",
+        reason:
+          "WAF not required for sites distribution; static content only with CSP script-src 'none'",
       },
       {
         id: "AwsSolutions-CFR3",

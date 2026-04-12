@@ -157,7 +157,7 @@ graph TD
 - [x] **T7: Template API**
   Implement endpoints: `GET /api/templates` (search, filter, sort, paginate), `GET /api/templates/:slug`, `POST /api/templates`, `PUT /api/templates/:id`, `DELETE /api/templates/:id`, `POST /api/templates/:id/fork`. Validate template HTML/CSS.
 
-- [ ] **T9: CloudFront Sites Distribution + CF Function Routing**
+- [x] **T9: CloudFront Sites Distribution + CF Function Routing**
   Add to AppStack: CloudFront distribution for user sites with OAC to S3 sites bucket. Configure wildcard DNS (`*.sitename.app`) + wildcard ACM cert. CloudFront response headers policy: `Content-Security-Policy: script-src 'none'; frame-ancestors 'none'`. Aggressive cache TTLs (24h for sites, immutable for assets). CloudFront Function (viewer-request) for host-header routing — extracts username from subdomain, rewrites S3 path. Checks suspension list (cached JSON in S3) — returns HTTP 451 for suspended sites. Reads domain mapping JSON for custom domain resolution.
 
 - [ ] **T10: Auth UI — Create + Login**

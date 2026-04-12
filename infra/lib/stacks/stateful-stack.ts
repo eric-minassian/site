@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import type { Construct } from "constructs";
 import type { EnvironmentConfig } from "../../config/types";
@@ -95,5 +96,22 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       enforceSSL: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
+
+    // Allow CloudFront OAC to read site objects (scoped to this account).
+    // Uses aws:SourceAccount instead of distribution ARN to avoid cross-stack cycle.
+    this.sitesBucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: "AllowCloudFrontOAC",
+        effect: iam.Effect.ALLOW,
+        actions: ["s3:GetObject"],
+        principals: [new iam.ServicePrincipal("cloudfront.amazonaws.com")],
+        resources: [this.sitesBucket.arnForObjects("*")],
+        conditions: {
+          StringEquals: {
+            "aws:SourceAccount": cdk.Aws.ACCOUNT_ID,
+          },
+        },
+      }),
+    );
   }
 }

@@ -7,6 +7,7 @@ cdk.out/
 !vitest.config.ts
 !cdk.json
 !jest.config.js
+!infra/lib/cf-functions/*.js
 
 # OS
 .DS_Store

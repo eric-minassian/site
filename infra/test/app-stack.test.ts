@@ -72,8 +72,7 @@ describe("AppStack", () => {
     template.resourceCountIs("AWS::SNS::Topic", 1);
   });
 
-  it("creates CloudFront distribution", () => {
-    template.resourceCountIs("AWS::CloudFront::Distribution", 1);
+  it("creates API CloudFront distribution", () => {
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: {
         DefaultCacheBehavior: {
@@ -81,6 +80,51 @@ describe("AppStack", () => {
         },
       },
     });
+  });
+
+  it("creates Sites CloudFront distribution with CSP headers", () => {
+    template.resourceCountIs("AWS::CloudFront::Distribution", 2);
+    template.hasResourceProperties("AWS::CloudFront::Distribution", {
+      DistributionConfig: {
+        DefaultCacheBehavior: {
+          ViewerProtocolPolicy: "redirect-to-https",
+        },
+      },
+    });
+  });
+
+  it("creates CloudFront Function for site routing", () => {
+    template.resourceCountIs("AWS::CloudFront::Function", 1);
+    template.hasResourceProperties("AWS::CloudFront::Function", {
+      FunctionConfig: {
+        Runtime: "cloudfront-js-2.0",
+      },
+    });
+  });
+
+  it("creates KeyValueStore for site routing data", () => {
+    template.resourceCountIs("AWS::CloudFront::KeyValueStore", 1);
+  });
+
+  it("creates response headers policy with CSP", () => {
+    template.hasResourceProperties(
+      "AWS::CloudFront::ResponseHeadersPolicy",
+      {
+        ResponseHeadersPolicyConfig: {
+          SecurityHeadersConfig: {
+            ContentSecurityPolicy: {
+              ContentSecurityPolicy:
+                "script-src 'none'; frame-ancestors 'none'",
+              Override: true,
+            },
+            FrameOptions: {
+              FrameOption: "DENY",
+              Override: true,
+            },
+          },
+        },
+      },
+    );
   });
 
   it("creates EventBridge rule for daily Safe Browsing scan", () => {
