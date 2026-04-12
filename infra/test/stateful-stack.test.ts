@@ -48,7 +48,7 @@ describe("StatefulStack", () => {
     template.resourceCountIs("AWS::S3::BucketPolicy", 2);
   });
 
-  it("adds username and keyHash GSIs to Sites table", () => {
+  it("adds username GSI to Sites table", () => {
     template.hasResourceProperties("AWS::DynamoDB::Table", {
       KeySchema: [{ AttributeName: "siteId", KeyType: "HASH" }],
       GlobalSecondaryIndexes: [
@@ -57,27 +57,17 @@ describe("StatefulStack", () => {
           KeySchema: [{ AttributeName: "username", KeyType: "HASH" }],
           Projection: { ProjectionType: "ALL" },
         },
-        {
-          IndexName: "KeyHashIndex",
-          KeySchema: [{ AttributeName: "keyHash", KeyType: "HASH" }],
-          Projection: { ProjectionType: "ALL" },
-        },
       ],
     });
   });
 
-  it("adds authorSiteId and slug GSIs to Templates table", () => {
+  it("adds authorSiteId GSI to Templates table", () => {
     template.hasResourceProperties("AWS::DynamoDB::Table", {
       KeySchema: [{ AttributeName: "templateId", KeyType: "HASH" }],
       GlobalSecondaryIndexes: [
         {
           IndexName: "AuthorSiteIdIndex",
           KeySchema: [{ AttributeName: "authorSiteId", KeyType: "HASH" }],
-          Projection: { ProjectionType: "ALL" },
-        },
-        {
-          IndexName: "SlugIndex",
-          KeySchema: [{ AttributeName: "slug", KeyType: "HASH" }],
           Projection: { ProjectionType: "ALL" },
         },
       ],
