@@ -160,7 +160,7 @@ graph TD
 - [x] **T9: CloudFront Sites Distribution + CF Function Routing**
   Add to AppStack: CloudFront distribution for user sites with OAC to S3 sites bucket. Configure wildcard DNS (`*.sitename.app`) + wildcard ACM cert. CloudFront response headers policy: `Content-Security-Policy: script-src 'none'; frame-ancestors 'none'`. Aggressive cache TTLs (24h for sites, immutable for assets). CloudFront Function (viewer-request) for host-header routing — extracts username from subdomain, rewrites S3 path. Checks suspension list (cached JSON in S3) — returns HTTP 451 for suspended sites. Reads domain mapping JSON for custom domain resolution.
 
-- [ ] **T10: Auth UI — Create + Login**
+- [x] **T10: Auth UI — Create + Login**
   Create site flow: pick username → call API → display 12-word passphrase with prominent "write these down" warning + copy button. Client SHA-256 hashes passphrase to derive token, stores token in `localStorage`. Return flow: enter 12 words → client derives token → validate against API → store in `localStorage`. Passphrase regeneration UI (shows new 12 words). Logout = clear `localStorage`.
 
 - [ ] **T11: Builder — Markdown Editor**
