@@ -98,7 +98,7 @@ graph TD
 
 ### Phase 0 — Foundations (parallel)
 
-- [ ] **T1: CDK Project + Pipeline Scaffold**
+- [x] **T1: CDK Project + Pipeline Scaffold**
   Set up CDK app with TypeScript. Project structure per CDK best practices:
   - `bin/app.ts` — composition only, instantiate pipeline stack
   - `lib/stacks/` — `StatefulStack`, `AppStack`
