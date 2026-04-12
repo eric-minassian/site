@@ -33,7 +33,10 @@ export class PipelineStack extends cdk.Stack {
       selfMutation: true,
       synth: new ShellStep("Synth", {
         input: source,
-        installCommands: ["npm install -g pnpm"],
+        installCommands: [
+          "n 22",
+          "npm install -g pnpm",
+        ],
         commands: [
           "pnpm install --frozen-lockfile",
           "pnpm run build",
