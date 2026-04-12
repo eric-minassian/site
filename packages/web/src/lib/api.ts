@@ -55,6 +55,34 @@ export function getSite(token: string) {
   });
 }
 
+export function updateSite(
+  token: string,
+  updates: {
+    title?: string;
+    markdown?: string;
+    templateId?: string;
+    templateVariables?: Record<string, string>;
+  },
+) {
+  return request<{
+    siteId: string;
+    username: string;
+    title: string;
+    markdown: string;
+    templateId: string | null;
+    templateVariables: Record<string, string>;
+    status: string;
+    buildStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    lastBuildAt: string | null;
+  }>("/api/site", {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(updates),
+  });
+}
+
 export function regeneratePassphrase(token: string) {
   return request<{ passphrase: string }>("/api/site/regenerate-passphrase", {
     method: "POST",

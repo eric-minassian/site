@@ -168,7 +168,7 @@ graph TD
 - [x] **T10: Auth UI — Create + Login**
   Create site flow: pick username → call API → display 12-word passphrase with prominent "write these down" warning + copy button. Client SHA-256 hashes passphrase to derive token, stores token in `localStorage`. Return flow: enter 12 words → client derives token → validate against API → store in `localStorage`. Passphrase regeneration UI (shows new 12 words). Logout = clear `localStorage`.
 
-- [ ] **T11: Builder — Markdown Editor**
+- [x] **T11: Builder — Markdown Editor**
   CodeMirror 6 editor with markdown syntax highlighting, keybindings, and basic toolbar (bold, italic, link, image, headings). Loads/saves markdown via Site API. Debounced auto-save.
 
 - [ ] **T24: Frontend Deploy — S3 + CloudFront**
