@@ -151,7 +151,7 @@ graph TD
 
 ### Phase 2 — Core APIs & Early UI (parallel, needs Phase 1)
 
-- [ ] **T6: Site API — CRUD + Auth**
+- [x] **T6: Site API — CRUD + Auth**
   Implement endpoints: `POST /api/sites` (create site — generate 12 BIP-39 words, compute double SHA-256 hash, store `keyHash`, return passphrase once), `GET /api/site`, `PUT /api/site`, `DELETE /api/site`, `POST /api/site/publish`, `POST /api/site/regenerate-passphrase`. Username validation (URL-safe, unique, not reserved). Delete cascades to templates + S3 assets. Include BIP-39 English wordlist as static asset. Rate limit site creation: 5 per IP per hour.
 
 - [ ] **T7: Template API**

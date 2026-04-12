@@ -1,0 +1,31 @@
+function env(name: string): string {
+  const value = process.env[name];
+  if (value === undefined || value === "") {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+  return value;
+}
+
+export const config = {
+  get sitesTable() {
+    return env("SITES_TABLE");
+  },
+  get templatesTable() {
+    return env("TEMPLATES_TABLE");
+  },
+  get reportsTable() {
+    return env("REPORTS_TABLE");
+  },
+  get assetsBucket() {
+    return env("ASSETS_BUCKET");
+  },
+  get sitesBucket() {
+    return env("SITES_BUCKET");
+  },
+  get buildQueueUrl() {
+    return env("BUILD_QUEUE_URL");
+  },
+  get reportsTopicArn() {
+    return env("REPORTS_TOPIC_ARN");
+  },
+};
