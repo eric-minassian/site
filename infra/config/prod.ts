@@ -2,7 +2,7 @@ import type { EnvironmentConfig } from "./types";
 
 export const prodConfig: EnvironmentConfig = {
   env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
+    account: "586098609055",
     region: "us-east-1",
   },
   stageName: "Prod",

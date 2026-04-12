@@ -3,7 +3,7 @@ import * as cdk from "aws-cdk-lib";
 import { AwsSolutionsChecks } from "cdk-nag";
 import { Aspects } from "aws-cdk-lib";
 import { devConfig, prodConfig } from "../config";
-import { PipelineStack } from "../lib/pipeline-stack";
+import { PipelineStack } from "../lib/stacks/pipeline-stack";
 
 const app = new cdk.App({
   context: {

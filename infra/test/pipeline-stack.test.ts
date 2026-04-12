@@ -2,7 +2,7 @@ import * as cdk from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
 import { describe, it } from "vitest";
 import { devConfig, prodConfig } from "../config";
-import { PipelineStack } from "../lib/pipeline-stack";
+import { PipelineStack } from "../lib/stacks/pipeline-stack";
 
 describe("PipelineStack", () => {
   const app = new cdk.App();

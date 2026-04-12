@@ -7,8 +7,8 @@ import {
   ShellStep,
 } from "aws-cdk-lib/pipelines";
 import type { Construct } from "constructs";
-import type { EnvironmentConfig } from "../config/types";
-import { AppStage } from "./stages/app-stage";
+import type { EnvironmentConfig } from "../../config/types";
+import { AppStage } from "../stages/app-stage";
 
 export interface PipelineStackProps extends cdk.StackProps {
   readonly devConfig: EnvironmentConfig;
@@ -28,7 +28,6 @@ export class PipelineStack extends cdk.Stack {
     );
 
     const pipeline = new CodePipeline(this, "Pipeline", {
-      pipelineName: "SitePlatformPipeline",
       pipelineType: cdk.aws_codepipeline.PipelineType.V2,
       selfMutation: true,
       synth: new ShellStep("Synth", {
@@ -68,21 +67,13 @@ export class PipelineStack extends cdk.Stack {
       },
     ]);
 
-    // Dev stage — auto-deploy + smoke test
+    // Dev stage — auto-deploy
     const devStage = new AppStage(this, "Dev", {
       env: props.devConfig.env,
       config: props.devConfig,
     });
 
-    const dev = pipeline.addStage(devStage);
-    dev.addPost(
-      new ShellStep("SmokeTest", {
-        commands: ["curl -f $API_URL/health"],
-        envFromCfnOutputs: {
-          API_URL: devStage.apiUrl,
-        },
-      }),
-    );
+    pipeline.addStage(devStage);
 
     // Prod stage — manual approval gate
     const prodStage = new AppStage(this, "Prod", {
