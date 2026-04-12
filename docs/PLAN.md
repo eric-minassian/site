@@ -27,6 +27,7 @@ graph TD
     T21[T21: Curated Templates]
     T22[T22: Abuse Reporting + Safe Browsing]
     T23[T23: E2E Tests]
+    T24[T24: Frontend Deploy — S3 + CloudFront]
 
     T1 --> T2
     T1 --> T3
@@ -77,10 +78,14 @@ graph TD
     T2 --> T22
     T9 --> T22
 
+    T3 --> T24
+    T5 --> T24
+
     T20 --> T23
     T13 --> T23
     T14 --> T23
     T22 --> T23
+    T24 --> T23
 ```
 
 ## Parallelization Groups
@@ -89,7 +94,7 @@ graph TD
 |-------|-------|------------|
 | 0 | T1, T4, T5 | Nothing — start immediately |
 | 1 | T2, T3 | T1 |
-| 2 | T6, T7, T9, T10, T11, T17 | Phase 1 + T4/T5 as needed |
+| 2 | T6, T7, T9, T10, T11, T17, T24 | Phase 1 + T4/T5 as needed |
 | 3 | T8, T12, T13, T14, T16, T18, T21, T22 | Phase 2 |
 | 4 | T15, T19, T20 | Phase 3 |
 | 5 | T23 | Phase 4 |
@@ -165,6 +170,16 @@ graph TD
 
 - [ ] **T11: Builder — Markdown Editor**
   CodeMirror 6 editor with markdown syntax highlighting, keybindings, and basic toolbar (bold, italic, link, image, headings). Loads/saves markdown via Site API. Debounced auto-save.
+
+- [ ] **T24: Frontend Deploy — S3 + CloudFront**
+  Deploy the Vite/React management app to CloudFront. Add to AppStack:
+  - S3 bucket for frontend static assets
+  - CloudFront distribution with custom domain for the management UI
+  - `BucketDeployment` to upload built Vite output during CDK deploy
+  - SPA routing: custom error response (403/404 → `/index.html` with 200) so client-side routing works
+  - Cache policy: long TTL + immutable for hashed assets (`/assets/*`), short TTL for `index.html`
+  - Response headers policy (security headers)
+  - Wire API origin as a `/api/*` behavior on the same distribution (or configure CORS on the API distribution) so the frontend can call the API without cross-origin issues
 
 - [ ] **T17: Image Upload**
   API endpoint that returns a presigned S3 URL. Content-addressed paths (`assets/{hash}.{ext}`) for immutable caching. Frontend drag-and-drop or file picker in markdown editor. On upload, insert markdown image syntax with CDN URL. Enforce file size limit (2MB per file, 10MB total per site). Allowed types: png, jpg, gif, webp, svg.
