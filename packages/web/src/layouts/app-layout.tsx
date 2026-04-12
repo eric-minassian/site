@@ -37,7 +37,7 @@ function NavItem({
         )
       }
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="size-4" />
       {label}
     </NavLink>
   );
@@ -69,14 +69,14 @@ export default function AppLayout() {
                   {username}
                 </span>
                 <Button variant="ghost" size="sm" onClick={logout}>
-                  <LogOut className="mr-1 h-4 w-4" />
+                  <LogOut data-icon="inline-start" />
                   Log out
                 </Button>
               </>
             ) : (
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/login">
-                  <LogIn className="mr-1 h-4 w-4" />
+                  <LogIn data-icon="inline-start" />
                   Log in
                 </Link>
               </Button>
