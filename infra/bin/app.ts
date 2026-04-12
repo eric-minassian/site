@@ -5,7 +5,11 @@ import { Aspects } from "aws-cdk-lib";
 import { devConfig, prodConfig } from "../config";
 import { PipelineStack } from "../lib/pipeline-stack";
 
-const app = new cdk.App();
+const app = new cdk.App({
+  context: {
+    "aws:cdk:disable-stack-trace": "true",
+  },
+});
 
 Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
 
