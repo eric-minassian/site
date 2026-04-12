@@ -6,10 +6,8 @@ export const devConfig: EnvironmentConfig = {
     region: "us-east-1",
   },
   stageName: "Dev",
-  domainName: "dev.sitename.app",
   codestarConnectionArn:
-    "arn:aws:codeconnections:us-east-1:ACCOUNT_ID:connection/PLACEHOLDER",
-  githubRepo: "owner/site",
+    "arn:aws:codeconnections:us-east-1:586098609055:connection/957213e2-71ff-4eec-a7ba-0a8a2899f417",
+  githubRepo: "eric-minassian/site",
   githubBranch: "main",
-  notificationEmail: "dev@sitename.app",
 };
