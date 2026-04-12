@@ -8,20 +8,71 @@ import {
   handleRegeneratePassphrase,
   handleUpdateSite,
 } from "./routes/sites";
+import {
+  handleCreateTemplate,
+  handleDeleteTemplate,
+  handleForkTemplate,
+  handleGetTemplate,
+  handleListTemplates,
+  handleUpdateTemplate,
+} from "./routes/templates";
 
-type Handler = (event: LambdaUrlEvent) => Promise<ApiResponse>;
+type Handler = (
+  event: LambdaUrlEvent,
+  params: Record<string, string>,
+) => Promise<ApiResponse>;
 
-const routes: Array<{ method: string; path: string; handler: Handler }> = [
-  { method: "POST", path: "/api/sites", handler: handleCreateSite },
-  { method: "GET", path: "/api/site", handler: handleGetSite },
-  { method: "PUT", path: "/api/site", handler: handleUpdateSite },
-  { method: "DELETE", path: "/api/site", handler: handleDeleteSite },
-  { method: "POST", path: "/api/site/publish", handler: handlePublishSite },
-  {
-    method: "POST",
-    path: "/api/site/regenerate-passphrase",
-    handler: handleRegeneratePassphrase,
-  },
+interface Route {
+  method: string;
+  segments: string[];
+  handler: Handler;
+}
+
+function buildRoute(method: string, path: string, handler: Handler): Route {
+  return { method, segments: path.split("/"), handler };
+}
+
+function matchRoute(
+  route: Route,
+  method: string,
+  path: string,
+): Record<string, string> | null {
+  if (route.method !== method) return null;
+  const pathSegments = path.split("/");
+  if (route.segments.length !== pathSegments.length) return null;
+
+  const params: Record<string, string> = {};
+  for (let i = 0; i < route.segments.length; i++) {
+    const seg = route.segments[i];
+    if (seg.startsWith(":")) {
+      params[seg.slice(1)] = pathSegments[i];
+    } else if (seg !== pathSegments[i]) {
+      return null;
+    }
+  }
+  return params;
+}
+
+const routes: Route[] = [
+  // Site routes
+  buildRoute("POST", "/api/sites", handleCreateSite),
+  buildRoute("GET", "/api/site", handleGetSite),
+  buildRoute("PUT", "/api/site", handleUpdateSite),
+  buildRoute("DELETE", "/api/site", handleDeleteSite),
+  buildRoute("POST", "/api/site/publish", handlePublishSite),
+  buildRoute(
+    "POST",
+    "/api/site/regenerate-passphrase",
+    handleRegeneratePassphrase,
+  ),
+
+  // Template routes (order matters: specific patterns before parameterized)
+  buildRoute("GET", "/api/templates", handleListTemplates),
+  buildRoute("POST", "/api/templates", handleCreateTemplate),
+  buildRoute("POST", "/api/templates/:id/fork", handleForkTemplate),
+  buildRoute("GET", "/api/templates/:slug", handleGetTemplate),
+  buildRoute("PUT", "/api/templates/:id", handleUpdateTemplate),
+  buildRoute("DELETE", "/api/templates/:id", handleDeleteTemplate),
 ];
 
 export const handler = async (
@@ -34,15 +85,17 @@ export const handler = async (
     return json(204, null);
   }
 
-  const route = routes.find((r) => r.method === method && r.path === path);
-  if (!route) {
-    return error(404, "Not found");
+  for (const route of routes) {
+    const params = matchRoute(route, method, path);
+    if (params) {
+      try {
+        return await route.handler(event, params);
+      } catch (err) {
+        console.error("Unhandled error:", err);
+        return error(500, "Internal server error");
+      }
+    }
   }
 
-  try {
-    return await route.handler(event);
-  } catch (err) {
-    console.error("Unhandled error:", err);
-    return error(500, "Internal server error");
-  }
+  return error(404, "Not found");
 };

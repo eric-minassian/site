@@ -33,3 +33,27 @@ export interface Site {
   updatedAt: string;
   lastBuildAt: string | null;
 }
+
+export interface TemplateVariable {
+  name: string;
+  label: string;
+  type: "color" | "font" | "number" | "select" | "text";
+  default: string;
+  options?: string[];
+}
+
+export interface Template {
+  templateId: string;
+  authorSiteId: string;
+  slug: string;
+  name: string;
+  description: string;
+  html: string;
+  css: string;
+  variables: TemplateVariable[];
+  isCurated: boolean;
+  forkedFromId: string | null;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -154,7 +154,7 @@ graph TD
 - [x] **T6: Site API — CRUD + Auth**
   Implement endpoints: `POST /api/sites` (create site — generate 12 BIP-39 words, compute double SHA-256 hash, store `keyHash`, return passphrase once), `GET /api/site`, `PUT /api/site`, `DELETE /api/site`, `POST /api/site/publish`, `POST /api/site/regenerate-passphrase`. Username validation (URL-safe, unique, not reserved). Delete cascades to templates + S3 assets. Include BIP-39 English wordlist as static asset. Rate limit site creation: 5 per IP per hour.
 
-- [ ] **T7: Template API**
+- [x] **T7: Template API**
   Implement endpoints: `GET /api/templates` (search, filter, sort, paginate), `GET /api/templates/:slug`, `POST /api/templates`, `PUT /api/templates/:id`, `DELETE /api/templates/:id`, `POST /api/templates/:id/fork`. Validate template HTML/CSS.
 
 - [ ] **T9: CloudFront Sites Distribution + CF Function Routing**
