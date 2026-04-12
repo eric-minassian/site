@@ -137,7 +137,7 @@ graph TD
   
   Export table/bucket references via typed props interface for AppStack consumption. No hardcoded physical names — let CloudFormation generate.
 
-- [ ] **T3: App Stack — Lambda Function URL + CloudFront**
+- [x] **T3: App Stack — Lambda Function URL + CloudFront**
   `AppStack` receives stateful resources via typed props. Define:
   - API Lambda (`NodejsFunction` with esbuild) + Function URL (no API Gateway)
   - CloudFront distribution for API (Function URL as origin, custom domain)

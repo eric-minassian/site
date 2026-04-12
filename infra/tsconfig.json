@@ -24,6 +24,7 @@
   "include": [
     "bin/**/*.ts",
     "lib/**/*.ts",
+    "lambda/**/*.ts",
     "config/**/*.ts",
     "test/**/*.ts"
   ],
