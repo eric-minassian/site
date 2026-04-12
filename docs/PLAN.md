@@ -122,7 +122,7 @@ graph TD
 - [x] **T4: Shared Render Library**
   Create internal package (`@site/renderer`) that converts markdown + template + variables into final HTML. Uses `unified` + `remark-parse` + `remark-gfm` + `remark-math` + `rehype-stringify` + `rehype-highlight` + `rehype-katex` + `gray-matter` + `handlebars`. Must work in both Node.js (Lambda) and browser. Include `rehype-sanitize` for server-side use. Include unit tests for rendering edge cases.
 
-- [ ] **T5: Frontend Scaffold**
+- [x] **T5: Frontend Scaffold**
   Init React + Vite + Tailwind + shadcn/ui + TypeScript app. Set up shadcn/ui (init, configure theme, install core components: Button, Input, Card, Dialog, Tabs, Select, DropdownMenu, Toast). Set up routing (React Router), layout shell (nav, sidebar), Tailwind config, and basic pages (home, create, login, dashboard, builder, marketplace). Auth context that stores derived token in `localStorage`. No real functionality yet — just the skeleton and navigation.
 
 ### Phase 1 — Infrastructure (parallel, needs T1)
