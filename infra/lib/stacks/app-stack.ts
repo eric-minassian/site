@@ -95,7 +95,6 @@ export class AppStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_22_X,
       timeout: cdk.Duration.minutes(2),
       memorySize: 1024,
-      reservedConcurrentExecutions: 10,
       environment: {
         SITES_TABLE: props.sitesTable.tableName,
         TEMPLATES_TABLE: props.templatesTable.tableName,

@@ -35,11 +35,10 @@ describe("AppStack", () => {
     });
   });
 
-  it("creates Build Lambda with reserved concurrency", () => {
+  it("creates Build Lambda", () => {
     template.hasResourceProperties("AWS::Lambda::Function", {
       MemorySize: 1024,
       Timeout: 120,
-      ReservedConcurrentExecutions: 10,
     });
   });
 
