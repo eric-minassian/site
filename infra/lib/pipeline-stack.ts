@@ -35,11 +35,10 @@ export class PipelineStack extends cdk.Stack {
         input: source,
         installCommands: ["npm install -g pnpm"],
         commands: [
-          "cd infra",
           "pnpm install --frozen-lockfile",
           "pnpm run build",
           "pnpm run test",
-          "npx cdk synth",
+          "cd infra && npx cdk synth",
         ],
         primaryOutputDirectory: "infra/cdk.out",
       }),

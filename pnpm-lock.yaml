@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  infra:
     dependencies:
       aws-cdk-lib:
         specifier: ^2.248.0
