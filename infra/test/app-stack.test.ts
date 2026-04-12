@@ -23,8 +23,8 @@ describe("AppStack", () => {
 
   const template = Template.fromStack(stack);
 
-  it("creates 3 Lambda functions", () => {
-    template.resourceCountIs("AWS::Lambda::Function", 3);
+  it("creates Lambda functions (3 app + 2 CDK custom resources)", () => {
+    template.resourceCountIs("AWS::Lambda::Function", 5);
   });
 
   it("creates API Lambda with correct config", () => {
@@ -82,8 +82,8 @@ describe("AppStack", () => {
     });
   });
 
-  it("creates Sites CloudFront distribution with CSP headers", () => {
-    template.resourceCountIs("AWS::CloudFront::Distribution", 2);
+  it("creates 3 CloudFront distributions (API, Sites, Frontend)", () => {
+    template.resourceCountIs("AWS::CloudFront::Distribution", 3);
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: {
         DefaultCacheBehavior: {
@@ -143,5 +143,63 @@ describe("AppStack", () => {
 
   it("enforces SSL on SNS topic", () => {
     template.resourceCountIs("AWS::SNS::TopicPolicy", 1);
+  });
+
+  it("creates frontend S3 bucket with public access blocked", () => {
+    template.hasResourceProperties("AWS::S3::Bucket", {
+      PublicAccessBlockConfiguration: {
+        BlockPublicAcls: true,
+        BlockPublicPolicy: true,
+        IgnorePublicAcls: true,
+        RestrictPublicBuckets: true,
+      },
+    });
+  });
+
+  it("creates frontend distribution with SPA error responses", () => {
+    template.hasResourceProperties("AWS::CloudFront::Distribution", {
+      DistributionConfig: {
+        DefaultRootObject: "index.html",
+        CustomErrorResponses: [
+          {
+            ErrorCode: 403,
+            ResponseCode: 200,
+            ResponsePagePath: "/index.html",
+            ErrorCachingMinTTL: 0,
+          },
+          {
+            ErrorCode: 404,
+            ResponseCode: 200,
+            ResponsePagePath: "/index.html",
+            ErrorCachingMinTTL: 0,
+          },
+        ],
+      },
+    });
+  });
+
+  it("creates frontend response headers policy with security headers", () => {
+    template.hasResourceProperties(
+      "AWS::CloudFront::ResponseHeadersPolicy",
+      {
+        ResponseHeadersPolicyConfig: {
+          SecurityHeadersConfig: {
+            FrameOptions: {
+              FrameOption: "DENY",
+              Override: true,
+            },
+            StrictTransportSecurity: {
+              AccessControlMaxAgeSec: 31536000,
+              IncludeSubdomains: true,
+              Override: true,
+            },
+            ReferrerPolicy: {
+              ReferrerPolicy: "strict-origin-when-cross-origin",
+              Override: true,
+            },
+          },
+        },
+      },
+    );
   });
 });

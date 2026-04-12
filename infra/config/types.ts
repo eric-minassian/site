@@ -10,4 +10,8 @@ export interface EnvironmentConfig {
   readonly sitesDomainName?: string;
   /** ACM certificate ARN for *.sitesDomainName (must be in us-east-1) */
   readonly sitesCertificateArn?: string;
+  /** Domain for management UI, e.g. "app.sitename.dev" */
+  readonly frontendDomainName?: string;
+  /** ACM certificate ARN for frontendDomainName (must be in us-east-1) */
+  readonly frontendCertificateArn?: string;
 }

@@ -171,7 +171,7 @@ graph TD
 - [x] **T11: Builder — Markdown Editor**
   CodeMirror 6 editor with markdown syntax highlighting, keybindings, and basic toolbar (bold, italic, link, image, headings). Loads/saves markdown via Site API. Debounced auto-save.
 
-- [ ] **T24: Frontend Deploy — S3 + CloudFront**
+- [x] **T24: Frontend Deploy — S3 + CloudFront**
   Deploy the Vite/React management app to CloudFront. Add to AppStack:
   - S3 bucket for frontend static assets
   - CloudFront distribution with custom domain for the management UI

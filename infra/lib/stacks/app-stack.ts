@@ -11,6 +11,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import { NagSuppressions } from "cdk-nag";
@@ -254,6 +255,141 @@ export class AppStack extends cdk.Stack {
       sitesDistributionProps,
     );
 
+    // --- Frontend S3 Bucket ---
+
+    const frontendBucket = new s3.Bucket(this, "FrontendBucket", {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    // --- Frontend CloudFront Distribution ---
+
+    const frontendResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(
+      this,
+      "FrontendResponseHeadersPolicy",
+      {
+        comment: "Security headers for management UI",
+        securityHeadersBehavior: {
+          contentTypeOptions: { override: true },
+          frameOptions: {
+            frameOption: cloudfront.HeadersFrameOption.DENY,
+            override: true,
+          },
+          strictTransportSecurity: {
+            accessControlMaxAge: cdk.Duration.days(365),
+            includeSubdomains: true,
+            override: true,
+          },
+          referrerPolicy: {
+            referrerPolicy:
+              cloudfront.HeadersReferrerPolicy
+                .STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+            override: true,
+          },
+        },
+      },
+    );
+
+    const frontendDefaultCachePolicy = new cloudfront.CachePolicy(
+      this,
+      "FrontendDefaultCachePolicy",
+      {
+        comment: "Short TTL for frontend index.html",
+        defaultTtl: cdk.Duration.minutes(5),
+        minTtl: cdk.Duration.seconds(0),
+        maxTtl: cdk.Duration.hours(1),
+        enableAcceptEncodingGzip: true,
+        enableAcceptEncodingBrotli: true,
+      },
+    );
+
+    const frontendAssetsCachePolicy = new cloudfront.CachePolicy(
+      this,
+      "FrontendAssetsCachePolicy",
+      {
+        comment: "Long TTL for hashed frontend assets",
+        defaultTtl: cdk.Duration.days(365),
+        minTtl: cdk.Duration.days(365),
+        maxTtl: cdk.Duration.days(365),
+        enableAcceptEncodingGzip: true,
+        enableAcceptEncodingBrotli: true,
+      },
+    );
+
+    const frontendOrigin =
+      origins.S3BucketOrigin.withOriginAccessControl(frontendBucket);
+
+    const frontendDistribution = new cloudfront.Distribution(
+      this,
+      "FrontendDistribution",
+      {
+        defaultBehavior: {
+          origin: frontendOrigin,
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: frontendDefaultCachePolicy,
+          responseHeadersPolicy: frontendResponseHeadersPolicy,
+        },
+        additionalBehaviors: {
+          "/assets/*": {
+            origin: frontendOrigin,
+            viewerProtocolPolicy:
+              cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+            allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+            cachePolicy: frontendAssetsCachePolicy,
+            responseHeadersPolicy: frontendResponseHeadersPolicy,
+          },
+        },
+        defaultRootObject: "index.html",
+        errorResponses: [
+          {
+            httpStatus: 403,
+            responseHttpStatus: 200,
+            responsePagePath: "/index.html",
+            ttl: cdk.Duration.seconds(0),
+          },
+          {
+            httpStatus: 404,
+            responseHttpStatus: 200,
+            responsePagePath: "/index.html",
+            ttl: cdk.Duration.seconds(0),
+          },
+        ],
+        ...(props.config.frontendDomainName &&
+        props.config.frontendCertificateArn
+          ? {
+              domainNames: [props.config.frontendDomainName],
+              certificate: acm.Certificate.fromCertificateArn(
+                this,
+                "FrontendCert",
+                props.config.frontendCertificateArn,
+              ),
+            }
+          : {}),
+      },
+    );
+
+    // --- Frontend Deployment ---
+
+    const frontendDeployment = new s3deploy.BucketDeployment(
+      this,
+      "FrontendDeployment",
+      {
+        sources: [
+          s3deploy.Source.asset(
+            path.join(__dirname, "../../../packages/web/dist"),
+          ),
+        ],
+        destinationBucket: frontendBucket,
+        distribution: frontendDistribution,
+        distributionPaths: ["/*"],
+      },
+    );
+
     // --- Outputs ---
 
     this.apiUrl = new cdk.CfnOutput(this, "ApiUrl", {
@@ -269,6 +405,11 @@ export class AppStack extends cdk.Stack {
     new cdk.CfnOutput(this, "SitesDistributionUrl", {
       value: `https://${sitesDistribution.distributionDomainName}`,
       description: "Sites CloudFront distribution URL",
+    });
+
+    new cdk.CfnOutput(this, "FrontendDistributionUrl", {
+      value: `https://${frontendDistribution.distributionDomainName}`,
+      description: "Frontend CloudFront distribution URL",
     });
 
     // --- cdk-nag suppressions ---
@@ -339,5 +480,48 @@ export class AppStack extends cdk.Stack {
           "Using default CloudFront domain without custom certificate; TLS 1.2 enforced when custom domain is added",
       },
     ]);
+
+    NagSuppressions.addResourceSuppressions(frontendBucket, [
+      {
+        id: "AwsSolutions-S1",
+        reason:
+          "Access logging not required for frontend static assets bucket; served via CloudFront",
+      },
+    ]);
+
+    NagSuppressions.addResourceSuppressions(frontendDistribution, [
+      {
+        id: "AwsSolutions-CFR1",
+        reason:
+          "WAF not required for frontend distribution; static SPA assets only",
+      },
+      {
+        id: "AwsSolutions-CFR2",
+        reason:
+          "WAF not required for frontend distribution; static SPA assets only",
+      },
+      {
+        id: "AwsSolutions-CFR3",
+        reason:
+          "Access logging not enabled for cost optimization; can be enabled for debugging when needed",
+      },
+      {
+        id: "AwsSolutions-CFR4",
+        reason:
+          "Using default CloudFront domain without custom certificate; TLS 1.2 enforced when custom domain is added",
+      },
+    ]);
+
+    NagSuppressions.addResourceSuppressions(
+      frontendDeployment,
+      [
+        {
+          id: "AwsSolutions-L1",
+          reason:
+            "BucketDeployment custom resource Lambda runtime is managed by CDK",
+        },
+      ],
+      true,
+    );
   }
 }
