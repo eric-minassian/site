@@ -29,7 +29,6 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       terminationProtection: true,
     });
 
-    // Placeholder — tables and buckets defined in T2
     this.sitesTable = new dynamodb.Table(this, "SitesTable", {
       partitionKey: { name: "siteId", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -37,6 +36,14 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       pointInTimeRecoverySpecification: {
         pointInTimeRecoveryEnabled: true,
       },
+    });
+    this.sitesTable.addGlobalSecondaryIndex({
+      indexName: "UsernameIndex",
+      partitionKey: { name: "username", type: dynamodb.AttributeType.STRING },
+    });
+    this.sitesTable.addGlobalSecondaryIndex({
+      indexName: "KeyHashIndex",
+      partitionKey: { name: "keyHash", type: dynamodb.AttributeType.STRING },
     });
 
     this.templatesTable = new dynamodb.Table(this, "TemplatesTable", {
@@ -50,6 +57,17 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
         pointInTimeRecoveryEnabled: true,
       },
     });
+    this.templatesTable.addGlobalSecondaryIndex({
+      indexName: "AuthorSiteIdIndex",
+      partitionKey: {
+        name: "authorSiteId",
+        type: dynamodb.AttributeType.STRING,
+      },
+    });
+    this.templatesTable.addGlobalSecondaryIndex({
+      indexName: "SlugIndex",
+      partitionKey: { name: "slug", type: dynamodb.AttributeType.STRING },
+    });
 
     this.reportsTable = new dynamodb.Table(this, "ReportsTable", {
       partitionKey: { name: "reportId", type: dynamodb.AttributeType.STRING },
@@ -58,6 +76,10 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       pointInTimeRecoverySpecification: {
         pointInTimeRecoveryEnabled: true,
       },
+    });
+    this.reportsTable.addGlobalSecondaryIndex({
+      indexName: "SiteIdIndex",
+      partitionKey: { name: "siteId", type: dynamodb.AttributeType.STRING },
     });
 
     this.assetsBucket = new s3.Bucket(this, "AssetsBucket", {

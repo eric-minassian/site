@@ -127,7 +127,7 @@ graph TD
 
 ### Phase 1 — Infrastructure (parallel, needs T1)
 
-- [ ] **T2: Stateful Stack — DynamoDB + S3**
+- [x] **T2: Stateful Stack — DynamoDB + S3**
   `StatefulStack` with termination protection enabled. Define:
   - DynamoDB `Sites` table (PK: siteId, GSIs: username, keyHash) — on-demand billing
   - DynamoDB `Templates` table (PK: templateId, GSIs: authorSiteId, slug) — on-demand billing
