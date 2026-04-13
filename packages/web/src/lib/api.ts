@@ -263,3 +263,18 @@ export function deleteTemplate(token: string, templateId: string) {
     },
   );
 }
+
+export function forkTemplate(
+  token: string,
+  templateId: string,
+  data: { slug: string; name?: string },
+) {
+  return request<TemplateDetail>(
+    `/api/templates/${encodeURIComponent(templateId)}/fork`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    },
+  );
+}

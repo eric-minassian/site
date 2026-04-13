@@ -235,7 +235,7 @@ function TemplateCard({ template: t }: { template: TemplateSummary }) {
   const colors = getTemplateColors(t);
 
   return (
-    <Link to={`/templates/${t.slug}/edit`}>
+    <Link to={`/templates/${t.slug}`}>
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
       {/* Preview thumbnail */}
       <div

@@ -212,7 +212,7 @@ graph TD
 
 ### Phase 4 — Dashboard & Polish (parallel, needs Phase 3)
 
-- [ ] **T15: Theme Marketplace — Detail Page**
+- [x] **T15: Theme Marketplace — Detail Page**
   Full template preview with sample content. Interactive variable controls to try before applying. Author info + link. "Use this template" action. "Fork this template" action. Usage count.
 
 - [ ] **T19: Custom Domain — UI**

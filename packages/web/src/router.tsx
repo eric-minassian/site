@@ -41,6 +41,10 @@ export const router = createBrowserRouter([
         lazy: lazyPage(() => import("@/pages/template-editor")),
       },
       {
+        path: "/templates/:slug",
+        lazy: lazyPage(() => import("@/pages/template-detail")),
+      },
+      {
         path: "/templates/:slug/edit",
         lazy: lazyPage(() => import("@/pages/template-editor")),
       },
