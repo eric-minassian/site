@@ -73,6 +73,9 @@ export class AppStack extends cdk.Stack {
         SITES_BUCKET: props.sitesBucket.bucketName,
         BUILD_QUEUE_URL: buildQueue.queueUrl,
         REPORTS_TOPIC_ARN: reportsTopic.topicArn,
+        ...(props.config.adminToken
+          ? { ADMIN_TOKEN: props.config.adminToken }
+          : {}),
       },
       bundling: { minify: true, sourceMap: true },
     });
@@ -146,6 +149,12 @@ export class AppStack extends cdk.Stack {
           SITES_TABLE: props.sitesTable.tableName,
           SITES_BUCKET: props.sitesBucket.bucketName,
           REPORTS_TOPIC_ARN: reportsTopic.topicArn,
+          ...(props.config.safeBrowsingApiKey
+            ? { SAFE_BROWSING_API_KEY: props.config.safeBrowsingApiKey }
+            : {}),
+          ...(props.config.sitesDomainName
+            ? { SITES_DOMAIN: props.config.sitesDomainName }
+            : {}),
         },
         bundling: { minify: true, sourceMap: true },
       },
@@ -282,6 +291,23 @@ export class AppStack extends cdk.Stack {
         resources: [
           `arn:aws:cloudfront::${this.account}:distribution/${sitesDistribution.distributionId}`,
         ],
+      }),
+    );
+
+    // --- Wire KVS to Safe Browsing Lambda ---
+
+    safeBrowsingHandler.addEnvironment(
+      "SITES_KVS_ARN",
+      sitesKvs.keyValueStoreArn,
+    );
+
+    safeBrowsingHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "cloudfront-keyvaluestore:DescribeKeyValueStore",
+          "cloudfront-keyvaluestore:PutKey",
+        ],
+        resources: [sitesKvs.keyValueStoreArn],
       }),
     );
 

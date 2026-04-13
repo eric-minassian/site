@@ -9,7 +9,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { config } from "./config";
-import type { Site, Template } from "./types";
+import type { Report, Site, Template } from "./types";
 
 const client = new DynamoDBClient({});
 const doc = DynamoDBDocumentClient.from(client);
@@ -251,6 +251,53 @@ export async function scanAllTemplates(): Promise<Template[]> {
       }),
     );
     items.push(...((result.Items as Template[]) ?? []));
+    lastKey = result.LastEvaluatedKey as
+      | Record<string, unknown>
+      | undefined;
+  } while (lastKey);
+
+  return items;
+}
+
+export async function createReport(report: Report): Promise<void> {
+  await doc.send(
+    new PutCommand({
+      TableName: config.reportsTable,
+      Item: report,
+    }),
+  );
+}
+
+export async function getReportsBySiteId(
+  siteId: string,
+): Promise<Report[]> {
+  const result = await doc.send(
+    new QueryCommand({
+      TableName: config.reportsTable,
+      IndexName: "SiteIdIndex",
+      KeyConditionExpression: "siteId = :s",
+      ExpressionAttributeValues: { ":s": siteId },
+    }),
+  );
+  return (result.Items as Report[]) ?? [];
+}
+
+export async function scanLiveSites(): Promise<Site[]> {
+  const items: Site[] = [];
+  let lastKey: Record<string, unknown> | undefined;
+
+  do {
+    const result = await doc.send(
+      new ScanCommand({
+        TableName: config.sitesTable,
+        FilterExpression:
+          "#status = :live AND (attribute_not_exists(suspended) OR suspended = :false)",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: { ":live": "live", ":false": false },
+        ExclusiveStartKey: lastKey,
+      }),
+    );
+    items.push(...((result.Items as Site[]) ?? []));
     lastKey = result.LastEvaluatedKey as
       | Record<string, unknown>
       | undefined;

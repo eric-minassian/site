@@ -22,6 +22,12 @@ import {
   handleListTemplates,
   handleUpdateTemplate,
 } from "./routes/templates";
+import {
+  handleAdminDeleteSite,
+  handleCreateReport,
+  handleSuspendSite,
+  handleUnsuspendSite,
+} from "./routes/reports";
 
 type Handler = (
   event: LambdaUrlEvent,
@@ -79,6 +85,14 @@ const routes: Route[] = [
 
   // Image routes
   buildRoute("POST", "/api/images", handleRequestUpload),
+
+  // Report routes
+  buildRoute("POST", "/api/reports", handleCreateReport),
+
+  // Admin routes
+  buildRoute("POST", "/api/admin/suspend", handleSuspendSite),
+  buildRoute("POST", "/api/admin/unsuspend", handleUnsuspendSite),
+  buildRoute("DELETE", "/api/admin/sites/:siteId", handleAdminDeleteSite),
 
   // Template routes (order matters: specific patterns before parameterized)
   buildRoute("GET", "/api/templates", handleListTemplates),

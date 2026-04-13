@@ -207,7 +207,7 @@ graph TD
 - [x] **T21: Curated Templates**
   Design and build 8-10 default templates covering common use cases: minimal, portfolio, resume, blog-style, developer, academic, creative, dark-mode. Each with thoughtful variable defaults. Mark as `isCurated` in DB.
 
-- [ ] **T22: Abuse Reporting + Safe Browsing**
+- [x] **T22: Abuse Reporting + Safe Browsing**
   Report abuse API endpoint (no auth required — accepts siteId + reason + optional details). Store in `Reports` table. SNS topic notification on new reports. Admin actions via CLI/script: suspend site (set flag in DB, update suspension list in S3 for CloudFront Function), unsuspend, delete. Scheduled Lambda (daily via EventBridge) checks active sites against Google Safe Browsing Lookup API. Auto-suspend flagged sites + send notification.
 
 ### Phase 4 — Dashboard & Polish (parallel, needs Phase 3)

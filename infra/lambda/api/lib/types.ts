@@ -36,6 +36,17 @@ export interface Site {
   createdAt: string;
   updatedAt: string;
   lastBuildAt: string | null;
+  suspended?: boolean;
+}
+
+export interface Report {
+  reportId: string;
+  siteId: string;
+  reason: string;
+  details: string | null;
+  email: string | null;
+  sourceIp: string;
+  createdAt: string;
 }
 
 export interface TemplateVariable {

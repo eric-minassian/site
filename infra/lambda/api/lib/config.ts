@@ -37,4 +37,7 @@ export const config = {
   get sitesDistributionId() {
     return env("SITES_DISTRIBUTION_ID");
   },
+  get adminToken(): string | null {
+    return process.env.ADMIN_TOKEN || null;
+  },
 };
