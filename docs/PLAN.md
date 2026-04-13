@@ -215,7 +215,7 @@ graph TD
 - [x] **T15: Theme Marketplace — Detail Page**
   Full template preview with sample content. Interactive variable controls to try before applying. Author info + link. "Use this template" action. "Fork this template" action. Usage count.
 
-- [ ] **T19: Custom Domain — UI**
+- [x] **T19: Custom Domain — UI**
   Domain settings section in dashboard. Input field for custom domain. Display DNS instructions (CNAME records) with copy buttons. Status indicator (pending validation, active, failed). Remove domain button.
 
 - [ ] **T20: Site Dashboard**

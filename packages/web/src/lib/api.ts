@@ -80,6 +80,8 @@ export function getSite(token: string) {
     buildStatus: string;
     createdAt: string;
     updatedAt: string;
+    customDomain: string | null;
+    customDomainStatus: "pending_validation" | "active" | "failed" | null;
     lastBuildAt: string | null;
   }>("/api/site", {
     headers: { Authorization: `Bearer ${token}` },
@@ -277,4 +279,39 @@ export function forkTemplate(
       body: JSON.stringify(data),
     },
   );
+}
+
+// ---------------------------------------------------------------------------
+// Custom Domains
+// ---------------------------------------------------------------------------
+
+export interface DomainStatus {
+  domain: string | null;
+  status: "pending_validation" | "active" | "failed" | null;
+  validationRecords: Array<{ name: string; value: string }> | null;
+}
+
+export interface DomainAddResult extends DomainStatus {
+  instructions: string;
+}
+
+export function addCustomDomain(token: string, domain: string) {
+  return request<DomainAddResult>("/api/site/custom-domain", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ domain }),
+  });
+}
+
+export function getCustomDomainStatus(token: string) {
+  return request<DomainStatus>("/api/site/custom-domain", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function removeCustomDomain(token: string) {
+  return request<{ removed: boolean }>("/api/site/custom-domain", {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }
