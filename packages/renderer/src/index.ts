@@ -1,5 +1,5 @@
-import matter from "gray-matter";
 import Handlebars from "handlebars";
+import { parse as parseYaml } from "yaml";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -76,6 +76,29 @@ function buildProcessor(sanitize: boolean) {
 }
 
 // ---------------------------------------------------------------------------
+// Frontmatter extraction (browser-compatible replacement for gray-matter)
+// ---------------------------------------------------------------------------
+
+const FRONTMATTER_RE = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*(?:\r?\n|$)([\s\S]*)$/;
+
+function extractFrontmatter(input: string): {
+  data: Record<string, unknown>;
+  content: string;
+} {
+  const match = FRONTMATTER_RE.exec(input);
+  if (!match) return { data: {}, content: input };
+  try {
+    const raw = parseYaml(match[1]);
+    const data = raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
+    return { data, content: match[2] };
+  } catch {
+    return { data: {}, content: input };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Template helpers
 // ---------------------------------------------------------------------------
 
@@ -107,7 +130,7 @@ export async function render(
   const { template = DEFAULT_TEMPLATE, variables = {}, sanitize = false } = options;
 
   // 1. Extract frontmatter
-  const { data: frontmatter, content: markdownBody } = matter(markdown);
+  const { data: frontmatter, content: markdownBody } = extractFrontmatter(markdown);
 
   // 2. Markdown → HTML
   const processor = buildProcessor(sanitize);

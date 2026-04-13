@@ -15,7 +15,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "gray-matter": "^4.0.3",
     "handlebars": "^4.7.8",
     "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
@@ -25,7 +24,8 @@
     "remark-math": "^6.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.1",
-    "unified": "^11.0.5"
+    "unified": "^11.0.5",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
