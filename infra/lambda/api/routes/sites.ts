@@ -70,6 +70,7 @@ const RESERVED_USERNAMES = new Set([
 ]);
 
 const USERNAME_RE = /^[a-z][a-z0-9-]{1,37}[a-z0-9]$/;
+const MAX_MARKDOWN_SIZE = 500 * 1024; // 500KB per R39
 
 function validateUsername(username: string): string | null {
   if (!USERNAME_RE.test(username)) {
@@ -193,6 +194,11 @@ export async function handleUpdateSite(
     return error(400, "Invalid JSON body");
   }
 
+  // Validate markdown size before accepting
+  if (typeof body.markdown === "string" && body.markdown.length > MAX_MARKDOWN_SIZE) {
+    return error(400, "Markdown content exceeds maximum size of 500KB");
+  }
+
   const allowedKeys = [
     "title",
     "markdown",
@@ -229,7 +235,12 @@ export async function handleDeleteSite(
 
   // Cascade: delete authored templates
   const templates = await getTemplatesByAuthor(result.siteId);
-  await Promise.all(templates.map((t) => deleteTemplate(t.templateId)));
+  const results = await Promise.allSettled(templates.map((t) => deleteTemplate(t.templateId)));
+  for (const r of results) {
+    if (r.status === "rejected") {
+      console.error("Failed to delete template during site cascade:", r.reason);
+    }
+  }
 
   // Cascade: delete S3 objects
   await deleteS3Prefix(config.assetsBucket, `assets/${result.siteId}/`);

@@ -65,7 +65,7 @@ export async function handleAddCustomDomain(
 
   const domain = body.domain.toLowerCase().trim();
 
-  if (!DOMAIN_RE.test(domain)) {
+  if (domain.length > 253 || !DOMAIN_RE.test(domain)) {
     return error(400, "Invalid domain format");
   }
 
@@ -150,8 +150,8 @@ export async function handleRemoveCustomDomain(
           IfMatch: desc.ETag ?? "",
         }),
       );
-    } catch {
-      // KVS key might not exist, continue
+    } catch (err) {
+      console.error(`Failed to remove domain ${result.customDomain} from KVS:`, err);
     }
 
     // Remove alternate domain from CloudFront distribution
@@ -160,8 +160,8 @@ export async function handleRemoveCustomDomain(
         config.sitesDistributionId,
         result.customDomain,
       );
-    } catch {
-      // Distribution update may fail if domain wasn't added, continue
+    } catch (err) {
+      console.error(`Failed to remove alternate domain ${result.customDomain} from CloudFront:`, err);
     }
   }
 
@@ -173,8 +173,8 @@ export async function handleRemoveCustomDomain(
           CertificateArn: result.customDomainCertArn,
         }),
       );
-    } catch {
-      // Cert may already be deleted or in use, continue
+    } catch (err) {
+      console.error(`Failed to delete ACM certificate ${result.customDomainCertArn}:`, err);
     }
   }
 
@@ -242,8 +242,8 @@ export async function handleGetCustomDomainStatus(
           validationRecords: result.customDomainValidation,
         });
       }
-    } catch {
-      // ACM describe failed, return stored status
+    } catch (err) {
+      console.error(`Failed to check ACM certificate status for ${result.customDomainCertArn}:`, err);
     }
   }
 

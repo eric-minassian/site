@@ -94,6 +94,7 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
+      versioned: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       cors: [
         {
@@ -124,6 +125,7 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
+      versioned: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 

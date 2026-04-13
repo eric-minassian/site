@@ -35,6 +35,7 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   addCustomDomain,
   ApiError,
+  deleteSite,
   getCustomDomainStatus,
   getSite,
   publishSite,
@@ -114,7 +115,7 @@ function CopyButton({ text }: { text: string }) {
   }
 
   return (
-    <Button variant="ghost" size="icon" className="size-7" onClick={handleCopy}>
+    <Button variant="ghost" size="icon" className="size-7" onClick={handleCopy} aria-label="Copy to clipboard">
       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
     </Button>
   );
@@ -193,7 +194,7 @@ function SiteOverviewSection({
         {/* Template info */}
         {site.templateId && (
           <div className="text-sm text-muted-foreground">
-            Template: <span className="font-medium text-foreground">{site.templateId}</span>
+            Template applied
           </div>
         )}
       </CardContent>
@@ -426,8 +427,8 @@ function CustomDomainSection({ token }: { token: string }) {
       const status = await getCustomDomainStatus(token);
       setDomainStatus(status);
       return status;
-    } catch {
-      // Silently ignore polling errors
+    } catch (err) {
+      console.warn("Failed to fetch domain status:", err);
       return null;
     }
   }, [token]);
@@ -680,6 +681,101 @@ function CustomDomainSection({ token }: { token: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Delete Site Section
+// ---------------------------------------------------------------------------
+
+function DeleteSiteSection({ token }: { token: string }) {
+  const { logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+
+  async function handleDelete() {
+    setLoading(true);
+    try {
+      await deleteSite(token);
+      toast.success("Site deleted");
+      logout();
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Failed to delete site",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleClose() {
+    setOpen(false);
+    setConfirmation("");
+  }
+
+  return (
+    <>
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="size-5" />
+            Delete Site
+          </CardTitle>
+          <CardDescription>
+            Permanently delete your site and all associated data. This action
+            cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Button variant="destructive" onClick={() => setOpen(true)}>
+            Delete my site
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete your site?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete your site, all content, templates
+              you've created, and uploaded images. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-start gap-3 rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-400">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <p>
+              Type <strong>delete</strong> below to confirm.
+            </p>
+          </div>
+          <Input
+            value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)}
+            placeholder='Type "delete" to confirm'
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading || confirmation !== "delete"}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete permanently"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Dashboard Page
 // ---------------------------------------------------------------------------
 
@@ -780,6 +876,7 @@ export default function DashboardPage() {
         />
         <CustomDomainSection token={token} />
         <PassphraseSection token={token} />
+        <DeleteSiteSection token={token} />
       </div>
     </div>
   );

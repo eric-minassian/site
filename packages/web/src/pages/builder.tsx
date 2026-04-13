@@ -10,6 +10,7 @@ import {
   getTemplateBySlug,
 } from "../lib/api";
 import type { TemplateSummary, TemplateDetail } from "../lib/api";
+import { combineTemplateCss } from "../lib/template-utils";
 import { MarkdownEditor } from "../components/markdown-editor";
 import { LivePreview } from "../components/live-preview";
 import { TemplateControls } from "../components/template-controls";
@@ -19,15 +20,6 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 const AUTO_SAVE_DELAY = 1000;
 const MIN_PANE_PERCENT = 20;
 const MAX_PANE_PERCENT = 80;
-
-function combineTemplateCss(html: string, css: string): string {
-  if (!css) return html;
-  const styleTag = `<style>${css}</style>`;
-  if (html.includes("</head>")) {
-    return html.replace("</head>", `${styleTag}\n</head>`);
-  }
-  return `${styleTag}\n${html}`;
-}
 
 export default function BuilderPage() {
   const { token, isAuthenticated } = useAuth();
@@ -191,8 +183,8 @@ export default function BuilderPage() {
         }
         setTemplateVariables(defaults);
         saveTemplateSettings(templateId, defaults);
-      } catch {
-        // Keep previous state on error
+      } catch (err) {
+        console.warn("Failed to load template:", err);
       } finally {
         setTemplateLoading(false);
       }

@@ -1,5 +1,6 @@
 import { tokenToKeyHash } from "./crypto";
 import { getSiteByKeyHash } from "./db";
+import { checkAuthRateLimit } from "./rate-limit";
 import { error } from "./response";
 import type { ApiResponse, LambdaUrlEvent, Site } from "./types";
 
@@ -17,6 +18,11 @@ export async function authenticate(
 
   if (!TOKEN_RE.test(token)) {
     return error(401, "Invalid token format");
+  }
+
+  const sourceIp = event.requestContext.http.sourceIp;
+  if (!checkAuthRateLimit(sourceIp)) {
+    return error(429, "Too many authentication attempts. Try again later.");
   }
 
   const keyHash = tokenToKeyHash(token);

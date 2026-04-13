@@ -14,13 +14,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -31,14 +24,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LivePreview } from "@/components/live-preview";
+import { VariableControl } from "@/components/variable-control";
 import { useAuth } from "@/contexts/auth-context";
 import {
   forkTemplate,
   getTemplateBySlug,
   updateSite,
   type TemplateDetail,
-  type TemplateVariable,
 } from "@/lib/api";
+import { combineTemplateCss } from "@/lib/template-utils";
 
 const SAMPLE_MARKDOWN = `# Welcome to My Site
 
@@ -69,121 +63,12 @@ function hello() {
 *Built with love.*
 `;
 
-const FONT_OPTIONS = [
-  { value: "system-ui, sans-serif", label: "System Default" },
-  { value: "Arial, sans-serif", label: "Arial" },
-  { value: "Georgia, serif", label: "Georgia" },
-  { value: "'Times New Roman', serif", label: "Times New Roman" },
-  { value: "'Courier New', monospace", label: "Courier New" },
-  { value: "Verdana, sans-serif", label: "Verdana" },
-  { value: "'Trebuchet MS', sans-serif", label: "Trebuchet MS" },
-  { value: "Palatino, serif", label: "Palatino" },
-  { value: "Garamond, serif", label: "Garamond" },
-  { value: "'Segoe UI', sans-serif", label: "Segoe UI" },
-  { value: "Tahoma, sans-serif", label: "Tahoma" },
-  { value: "'Lucida Console', monospace", label: "Lucida Console" },
-];
-
-function combineTemplateCss(html: string, css: string): string {
-  if (!css) return html;
-  const styleTag = `<style>${css}</style>`;
-  if (html.includes("</head>")) {
-    return html.replace("</head>", `${styleTag}\n</head>`);
-  }
-  return `${styleTag}\n${html}`;
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
-}
-
-function VariablePreviewControl({
-  variable,
-  value,
-  onChange,
-}: {
-  variable: TemplateVariable;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const current = value || variable.default;
-
-  switch (variable.type) {
-    case "color":
-      return (
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={current}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-8 shrink-0 cursor-pointer rounded border border-input"
-          />
-          <Input
-            value={current}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-8 font-mono text-xs"
-          />
-        </div>
-      );
-    case "font":
-      return (
-        <Select value={current} onValueChange={onChange}>
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FONT_OPTIONS.map((font) => (
-              <SelectItem
-                key={font.value}
-                value={font.value}
-                className="text-xs"
-              >
-                <span style={{ fontFamily: font.value }}>{font.label}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    case "number":
-      return (
-        <Input
-          type="number"
-          value={current}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 text-xs"
-        />
-      );
-    case "select":
-      return (
-        <Select value={current} onValueChange={onChange}>
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(variable.options ?? []).map((opt) => (
-              <SelectItem key={opt} value={opt} className="text-xs">
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    case "text":
-    default:
-      return (
-        <Input
-          type="text"
-          value={current}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 text-xs"
-          placeholder={variable.default}
-        />
-      );
-  }
 }
 
 export default function TemplateDetailPage() {
@@ -334,7 +219,7 @@ export default function TemplateDetailPage() {
           <div className="flex flex-wrap items-center gap-4 pt-1 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />
-              {template.authorSiteId}
+              {template.isCurated ? "Curated" : "Community"}
             </span>
             <span className="flex items-center gap-1">
               <Download className="h-3.5 w-3.5" />
@@ -402,7 +287,7 @@ export default function TemplateDetailPage() {
                     <label className="mb-1 block text-xs text-muted-foreground">
                       {v.label}
                     </label>
-                    <VariablePreviewControl
+                    <VariableControl
                       variable={v}
                       value={variables[v.name] ?? ""}
                       onChange={(val) => handleVariableChange(v.name, val)}

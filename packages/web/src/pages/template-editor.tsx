@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { CodeEditor } from "../components/code-editor";
 import { VariableDefinitionEditor } from "../components/variable-definition-editor";
 import { LivePreview } from "../components/live-preview";
+import { combineTemplateCss } from "../lib/template-utils";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -57,15 +58,6 @@ function hello() {
 
 Feel free to reach out!
 `;
-
-function combineTemplateCss(html: string, css: string): string {
-  if (!css) return html;
-  const styleTag = `<style>${css}</style>`;
-  if (html.includes("</head>")) {
-    return html.replace("</head>", `${styleTag}\n</head>`);
-  }
-  return `${styleTag}\n${html}`;
-}
 
 export default function TemplateEditorPage() {
   const { slug } = useParams<{ slug: string }>();

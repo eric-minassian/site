@@ -36,17 +36,17 @@ const cf = new CloudFrontClient({});
 // Template sanitization
 // ---------------------------------------------------------------------------
 
-const DANGEROUS_TAGS = /(<\s*\/?\s*(?:script|noscript|iframe|embed|object|form)\b[^>]*>)/gi;
+const DANGEROUS_TAGS = /(<\s*\/?\s*(?:script|noscript|iframe|embed|object|form|base|svg|math|audio|video|source)\b[^>]*>)/gi;
 const EVENT_HANDLERS = /\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
-const JAVASCRIPT_URIS = /(?:href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi;
-const META_REFRESH = /<\s*meta\s+[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*>/gi;
+const DANGEROUS_URIS = /(?:href|src|action|srcdoc|data|formaction|xlink:href)\s*=\s*(?:"(?:javascript|data|vbscript):[^"]*"|'(?:javascript|data|vbscript):[^']*')/gi;
+const META_DANGEROUS = /<\s*meta\s+[^>]*http-equiv\s*=\s*["']?(?:refresh|set-cookie)["']?[^>]*>/gi;
 
 function sanitizeTemplate(html: string): string {
   return html
     .replace(DANGEROUS_TAGS, "")
     .replace(EVENT_HANDLERS, "")
-    .replace(JAVASCRIPT_URIS, "")
-    .replace(META_REFRESH, "");
+    .replace(DANGEROUS_URIS, "")
+    .replace(META_DANGEROUS, "");
 }
 
 // ---------------------------------------------------------------------------
@@ -59,7 +59,8 @@ function injectCspMeta(html: string): string {
   if (html.includes("</head>")) {
     return html.replace("</head>", `${CSP_META}\n</head>`);
   }
-  return `${CSP_META}\n${html}`;
+  // If no <head>, wrap content in a proper document structure
+  return `<!DOCTYPE html><html><head>${CSP_META}</head><body>${html}</body></html>`;
 }
 
 const ABUSE_LINK_STYLE =

@@ -77,8 +77,8 @@ export function LivePreview({ markdown, template, variables }: LivePreviewProps)
       try {
         const result = await render(markdown, { template, variables });
         setHtml(result.html);
-      } catch {
-        // Ignore render errors during typing
+      } catch (err) {
+        console.warn("Preview render error:", err);
       }
     }, DEBOUNCE_MS);
 
@@ -107,6 +107,7 @@ export function LivePreview({ markdown, template, variables }: LivePreviewProps)
             className="h-8 w-8"
             onClick={() => setViewport(vp)}
             title={label}
+            aria-label={`${label} preview`}
           >
             <Icon className="h-4 w-4" />
           </Button>

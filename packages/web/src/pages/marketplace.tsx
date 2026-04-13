@@ -279,11 +279,11 @@ function TemplateCard({ template: t }: { template: TemplateSummary }) {
       <CardFooter className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Users className="size-3" />
-          {t.authorSiteId}
+          {t.isCurated ? "Curated" : "Community"}
         </span>
         <span className="flex items-center gap-1">
           <Download className="size-3" />
-          {t.usageCount}
+          {t.usageCount} {t.usageCount === 1 ? "use" : "uses"}
         </span>
       </CardFooter>
     </Card>

@@ -1,4 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
+const DEFAULT_TIMEOUT_MS = 15_000;
+const MAX_MARKDOWN_SIZE = 500 * 1024; // 500KB per R39
 
 // ---------------------------------------------------------------------------
 // Template types
@@ -44,21 +46,34 @@ async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
-  const body = (await res.json()) as T & { error?: string };
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
 
-  if (!res.ok) {
-    throw new ApiError(res.status, body.error ?? res.statusText);
+    const body = (await res.json()) as T & { error?: string };
+
+    if (!res.ok) {
+      throw new ApiError(res.status, body.error ?? res.statusText);
+    }
+
+    return body;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError(0, "Request timed out");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return body;
 }
 
 export function createSite(username: string) {
@@ -97,6 +112,9 @@ export function updateSite(
     templateVariables?: Record<string, string>;
   },
 ) {
+  if (updates.markdown && updates.markdown.length > MAX_MARKDOWN_SIZE) {
+    return Promise.reject(new ApiError(400, "Markdown content exceeds maximum size of 500KB"));
+  }
   return request<{
     siteId: string;
     username: string;
@@ -113,6 +131,13 @@ export function updateSite(
     method: "PUT",
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(updates),
+  });
+}
+
+export function deleteSite(token: string) {
+  return request<{ deleted: boolean }>("/api/site", {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
 
