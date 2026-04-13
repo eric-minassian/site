@@ -522,6 +522,15 @@ export class AppStack extends cdk.Stack {
           responseHeadersPolicy: frontendResponseHeadersPolicy,
         },
         additionalBehaviors: {
+          "/api/*": {
+            origin: new origins.FunctionUrlOrigin(fnUrl),
+            viewerProtocolPolicy:
+              cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+            allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+            cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+            originRequestPolicy:
+              cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          },
           "/assets/*": {
             origin: frontendOrigin,
             viewerProtocolPolicy:
