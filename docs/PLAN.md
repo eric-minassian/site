@@ -198,7 +198,7 @@ graph TD
 - [x] **T14: Theme Marketplace — Browse**
   Grid layout of template cards. Each card: preview thumbnail, name, author, usage count. Search bar (name/description). Filter chips (curated, community). Sort dropdown (popular, newest). Paginated or infinite scroll.
 
-- [ ] **T16: Template Editor**
+- [x] **T16: Template Editor**
   Full editor for creating/editing templates. CodeMirror for HTML and CSS. Variable definition UI (add/edit/remove variables with name, label, type, default). Live preview using sample markdown content. Publish/update button. Fork indicator if forked from another template.
 
 - [ ] **T18: Custom Domain — API**

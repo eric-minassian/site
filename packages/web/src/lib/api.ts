@@ -213,3 +213,53 @@ export function getTemplateBySlug(slug: string) {
     `/api/templates/${encodeURIComponent(slug)}`,
   );
 }
+
+export function createTemplate(
+  token: string,
+  data: {
+    slug: string;
+    name: string;
+    description?: string;
+    html: string;
+    css?: string;
+    variables?: TemplateVariable[];
+  },
+) {
+  return request<TemplateDetail>("/api/templates", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateTemplate(
+  token: string,
+  templateId: string,
+  data: {
+    slug?: string;
+    name?: string;
+    description?: string;
+    html?: string;
+    css?: string;
+    variables?: TemplateVariable[];
+  },
+) {
+  return request<TemplateDetail>(
+    `/api/templates/${encodeURIComponent(templateId)}`,
+    {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export function deleteTemplate(token: string, templateId: string) {
+  return request<{ deleted: boolean }>(
+    `/api/templates/${encodeURIComponent(templateId)}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+}

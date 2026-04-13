@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router";
 import {
   Search,
   Users,
   Download,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/contexts/auth-context";
 import { getTemplates, type TemplateSummary } from "@/lib/api";
 
 const PAGE_SIZE = 12;
@@ -39,6 +42,7 @@ function getTemplateColors(t: TemplateSummary) {
 }
 
 export default function MarketplacePage() {
+  const { isAuthenticated } = useAuth();
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -95,11 +99,21 @@ export default function MarketplacePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 py-8">
-      <div>
-        <h1 className="text-2xl font-bold">Theme Marketplace</h1>
-        <p className="text-muted-foreground">
-          Browse and apply templates for your site.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Theme Marketplace</h1>
+          <p className="text-muted-foreground">
+            Browse and apply templates for your site.
+          </p>
+        </div>
+        {isAuthenticated && (
+          <Button asChild size="sm">
+            <Link to="/templates/new">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Create Template
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Controls */}
@@ -221,6 +235,7 @@ function TemplateCard({ template: t }: { template: TemplateSummary }) {
   const colors = getTemplateColors(t);
 
   return (
+    <Link to={`/templates/${t.slug}/edit`}>
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
       {/* Preview thumbnail */}
       <div
@@ -272,5 +287,6 @@ function TemplateCard({ template: t }: { template: TemplateSummary }) {
         </span>
       </CardFooter>
     </Card>
+    </Link>
   );
 }

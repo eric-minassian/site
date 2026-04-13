@@ -36,6 +36,14 @@ export const router = createBrowserRouter([
         path: "/marketplace",
         lazy: lazyPage(() => import("@/pages/marketplace")),
       },
+      {
+        path: "/templates/new",
+        lazy: lazyPage(() => import("@/pages/template-editor")),
+      },
+      {
+        path: "/templates/:slug/edit",
+        lazy: lazyPage(() => import("@/pages/template-editor")),
+      },
     ],
   },
 ]);
