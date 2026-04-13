@@ -282,6 +282,17 @@ export function forkTemplate(
 }
 
 // ---------------------------------------------------------------------------
+// Publish
+// ---------------------------------------------------------------------------
+
+export function publishSite(token: string) {
+  return request<{ buildStatus: string }>("/api/site/publish", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Custom Domains
 // ---------------------------------------------------------------------------
 

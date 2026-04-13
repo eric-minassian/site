@@ -218,7 +218,7 @@ graph TD
 - [x] **T19: Custom Domain — UI**
   Domain settings section in dashboard. Input field for custom domain. Display DNS instructions (CNAME records) with copy buttons. Status indicator (pending validation, active, failed). Remove domain button.
 
-- [ ] **T20: Site Dashboard**
+- [x] **T20: Site Dashboard**
   Main dashboard showing: site status (draft/building/live), site URL (clickable), last build time, current template name/preview, quick actions (edit content, change template, site settings). Build status polling for real-time updates. Passphrase regeneration section.
 
 ### Phase 5 — Testing (needs Phase 4)
