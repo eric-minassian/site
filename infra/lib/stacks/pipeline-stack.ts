@@ -80,8 +80,7 @@ export class PipelineStack extends cdk.Stack {
         "n 22",
         "npm install -g pnpm",
         "pnpm install --frozen-lockfile",
-        "cd e2e && npx playwright install --with-deps chromium",
-        "cd e2e && npx playwright test",
+        "cd e2e && npx playwright install --with-deps chromium && npx playwright test",
       ],
     });
 
