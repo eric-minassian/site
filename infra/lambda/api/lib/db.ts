@@ -70,10 +70,13 @@ export async function getSiteByCustomDomain(
 }
 
 export async function createSite(site: Site): Promise<void> {
+  const item = Object.fromEntries(
+    Object.entries(site).filter(([, v]) => v !== null && v !== undefined),
+  );
   await doc.send(
     new PutCommand({
       TableName: config.sitesTable,
-      Item: site,
+      Item: item,
       ConditionExpression: "attribute_not_exists(siteId)",
     }),
   );
@@ -90,21 +93,33 @@ export async function updateSite(
 
   const names: Record<string, string> = {};
   const values: Record<string, unknown> = {};
-  const exprs: string[] = [];
+  const setExprs: string[] = [];
+  const removeExprs: string[] = [];
 
   for (const [key, value] of entries) {
     names[`#${key}`] = key;
-    values[`:${key}`] = value;
-    exprs.push(`#${key} = :${key}`);
+    if (value === null) {
+      removeExprs.push(`#${key}`);
+    } else {
+      values[`:${key}`] = value;
+      setExprs.push(`#${key} = :${key}`);
+    }
   }
+
+  const parts: string[] = [];
+  if (setExprs.length > 0) parts.push(`SET ${setExprs.join(", ")}`);
+  if (removeExprs.length > 0) parts.push(`REMOVE ${removeExprs.join(", ")}`);
+  if (parts.length === 0) return null;
 
   const result = await doc.send(
     new UpdateCommand({
       TableName: config.sitesTable,
       Key: { siteId },
-      UpdateExpression: `SET ${exprs.join(", ")}`,
+      UpdateExpression: parts.join(" "),
       ExpressionAttributeNames: names,
-      ExpressionAttributeValues: values,
+      ...(Object.keys(values).length > 0 && {
+        ExpressionAttributeValues: values,
+      }),
       ConditionExpression: "attribute_exists(siteId)",
       ReturnValues: "ALL_NEW",
     }),
