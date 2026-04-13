@@ -204,7 +204,7 @@ graph TD
 - [x] **T18: Custom Domain — API**
   Endpoint to add/remove custom domain. On add: store domain mapping, request ACM certificate with DNS validation, return validation CNAME records. Background polling Lambda checks cert status and attaches to CloudFront when validated. On domain add/remove: update cached domain mapping JSON in S3 (consumed by CloudFront Function). Endpoint to check domain status.
 
-- [ ] **T21: Curated Templates**
+- [x] **T21: Curated Templates**
   Design and build 8-10 default templates covering common use cases: minimal, portfolio, resume, blog-style, developer, academic, creative, dark-mode. Each with thoughtful variable defaults. Mark as `isCurated` in DB.
 
 - [ ] **T22: Abuse Reporting + Safe Browsing**

@@ -1,9 +1,11 @@
+import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as cdk from "aws-cdk-lib";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
+import * as cr from "aws-cdk-lib/custom-resources";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
@@ -547,6 +549,48 @@ export class AppStack extends cdk.Stack {
         distribution: frontendDistribution,
         distributionPaths: ["/*"],
       },
+    );
+
+    // --- Seed Curated Templates ---
+
+    const seedTemplatesDir = path.join(__dirname, "../../lambda/seed");
+    const seedContentHash = crypto
+      .createHash("sha256")
+      .update(fs.readFileSync(path.join(seedTemplatesDir, "templates.ts")))
+      .digest("hex")
+      .slice(0, 16);
+
+    const seedHandler = new NodejsFunction(this, "SeedTemplatesHandler", {
+      entry: path.join(seedTemplatesDir, "index.ts"),
+      runtime: lambda.Runtime.NODEJS_22_X,
+      timeout: cdk.Duration.minutes(2),
+      memorySize: 256,
+      environment: {
+        TEMPLATES_TABLE: props.templatesTable.tableName,
+      },
+      bundling: { minify: true, sourceMap: true },
+    });
+
+    props.templatesTable.grantReadWriteData(seedHandler);
+
+    const seedProvider = new cr.Provider(this, "SeedTemplatesProvider", {
+      onEventHandler: seedHandler,
+    });
+
+    new cdk.CustomResource(this, "SeedTemplates", {
+      serviceToken: seedProvider.serviceToken,
+      properties: { contentHash: seedContentHash },
+    });
+
+    NagSuppressions.addResourceSuppressions(
+      seedProvider,
+      [
+        {
+          id: "AwsSolutions-L1",
+          reason: "Provider framework Lambda runtime is managed by CDK",
+        },
+      ],
+      true,
     );
 
     // --- Outputs ---
