@@ -6,7 +6,6 @@ test.describe("Abuse reporting", () => {
     request,
     baseURL,
   }) => {
-    // Create a report against the test site
     const res = await request.post(`${baseURL}/api/reports`, {
       data: {
         siteId: authInfo.username,
@@ -18,5 +17,22 @@ test.describe("Abuse reporting", () => {
     expect(res.ok()).toBeTruthy();
     const body = (await res.json()) as { reportId: string };
     expect(body.reportId).toBeTruthy();
+  });
+
+  test("abuse report requires siteId and reason", async ({
+    request,
+    baseURL,
+  }) => {
+    // Missing reason
+    const res1 = await request.post(`${baseURL}/api/reports`, {
+      data: { siteId: "some-id" },
+    });
+    expect(res1.ok()).toBeFalsy();
+
+    // Missing siteId
+    const res2 = await request.post(`${baseURL}/api/reports`, {
+      data: { reason: "spam" },
+    });
+    expect(res2.ok()).toBeFalsy();
   });
 });
