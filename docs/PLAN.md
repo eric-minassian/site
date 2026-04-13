@@ -195,7 +195,7 @@ graph TD
 - [x] **T13: Builder — Template Controls**
   Fetch current template's variable definitions. Auto-generate control UI: color pickers for `color` type, font selector for `font`, number inputs, dropdowns for `select`, text inputs for `text`. Changes feed into preview in real time. Save variable values to site settings.
 
-- [ ] **T14: Theme Marketplace — Browse**
+- [x] **T14: Theme Marketplace — Browse**
   Grid layout of template cards. Each card: preview thumbnail, name, author, usage count. Search bar (name/description). Filter chips (curated, community). Sort dropdown (popular, newest). Paginated or infinite scroll.
 
 - [ ] **T16: Template Editor**
