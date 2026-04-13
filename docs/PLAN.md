@@ -186,7 +186,7 @@ graph TD
 
 ### Phase 3 — Builder, Marketplace, Build Pipeline (parallel, needs Phase 2)
 
-- [ ] **T8: Build Lambda + SQS + Sanitization**
+- [x] **T8: Build Lambda + SQS + Sanitization**
   SQS queue for build jobs. Lambda consumer that: reads site + template from DB, runs shared render library with sanitization enabled (rehype-sanitize for markdown, custom sanitizer for template HTML — strip `<script>`, event handlers, `<form>`, `<iframe>`, `<embed>`, `<object>`, `javascript:` URIs, `<meta http-equiv="refresh">`), injects "Report abuse" link in footer, uploads HTML to S3, invalidates CloudFront, updates build status. DLQ for failed builds. Concurrency controls.
 
 - [ ] **T12: Builder — Live Preview**
