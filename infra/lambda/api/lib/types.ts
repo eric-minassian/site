@@ -29,6 +29,10 @@ export interface Site {
   templateVariables: Record<string, string>;
   status: "draft" | "building" | "live";
   buildStatus: "idle" | "queued" | "building" | "success" | "failed";
+  customDomain: string | null;
+  customDomainStatus: "pending_validation" | "active" | "failed" | null;
+  customDomainCertArn: string | null;
+  customDomainValidation: Array<{ name: string; value: string }> | null;
   createdAt: string;
   updatedAt: string;
   lastBuildAt: string | null;

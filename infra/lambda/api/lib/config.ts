@@ -31,4 +31,10 @@ export const config = {
   get assetsCdnUrl() {
     return env("ASSETS_CDN_URL");
   },
+  get sitesKvsArn() {
+    return env("SITES_KVS_ARN");
+  },
+  get sitesDistributionId() {
+    return env("SITES_DISTRIBUTION_ID");
+  },
 };

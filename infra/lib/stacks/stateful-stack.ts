@@ -46,6 +46,13 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       indexName: "KeyHashIndex",
       partitionKey: { name: "keyHash", type: dynamodb.AttributeType.STRING },
     });
+    this.sitesTable.addGlobalSecondaryIndex({
+      indexName: "CustomDomainIndex",
+      partitionKey: {
+        name: "customDomain",
+        type: dynamodb.AttributeType.STRING,
+      },
+    });
 
     this.templatesTable = new dynamodb.Table(this, "TemplatesTable", {
       partitionKey: {

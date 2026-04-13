@@ -8,6 +8,11 @@ import {
   handleRegeneratePassphrase,
   handleUpdateSite,
 } from "./routes/sites";
+import {
+  handleAddCustomDomain,
+  handleGetCustomDomainStatus,
+  handleRemoveCustomDomain,
+} from "./routes/domains";
 import { handleRequestUpload } from "./routes/images";
 import {
   handleCreateTemplate,
@@ -66,6 +71,11 @@ const routes: Route[] = [
     "/api/site/regenerate-passphrase",
     handleRegeneratePassphrase,
   ),
+
+  // Custom domain routes
+  buildRoute("POST", "/api/site/custom-domain", handleAddCustomDomain),
+  buildRoute("GET", "/api/site/custom-domain", handleGetCustomDomainStatus),
+  buildRoute("DELETE", "/api/site/custom-domain", handleRemoveCustomDomain),
 
   // Image routes
   buildRoute("POST", "/api/images", handleRequestUpload),

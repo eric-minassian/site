@@ -201,7 +201,7 @@ graph TD
 - [x] **T16: Template Editor**
   Full editor for creating/editing templates. CodeMirror for HTML and CSS. Variable definition UI (add/edit/remove variables with name, label, type, default). Live preview using sample markdown content. Publish/update button. Fork indicator if forked from another template.
 
-- [ ] **T18: Custom Domain — API**
+- [x] **T18: Custom Domain — API**
   Endpoint to add/remove custom domain. On add: store domain mapping, request ACM certificate with DNS validation, return validation CNAME records. Background polling Lambda checks cert status and attaches to CloudFront when validated. On domain add/remove: update cached domain mapping JSON in S3 (consumed by CloudFront Function). Endpoint to check domain status.
 
 - [ ] **T21: Curated Templates**

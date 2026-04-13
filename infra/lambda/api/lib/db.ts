@@ -54,6 +54,21 @@ export async function getSiteByKeyHash(
   return (result.Items?.[0] as Site | undefined) ?? null;
 }
 
+export async function getSiteByCustomDomain(
+  domain: string,
+): Promise<Site | null> {
+  const result = await doc.send(
+    new QueryCommand({
+      TableName: config.sitesTable,
+      IndexName: "CustomDomainIndex",
+      KeyConditionExpression: "customDomain = :d",
+      ExpressionAttributeValues: { ":d": domain },
+      Limit: 1,
+    }),
+  );
+  return (result.Items?.[0] as Site | undefined) ?? null;
+}
+
 export async function createSite(site: Site): Promise<void> {
   await doc.send(
     new PutCommand({
@@ -104,6 +119,30 @@ export async function deleteSite(siteId: string): Promise<void> {
       Key: { siteId },
     }),
   );
+}
+
+export async function scanSitesByDomainStatus(
+  status: string,
+): Promise<Site[]> {
+  const items: Site[] = [];
+  let lastKey: Record<string, unknown> | undefined;
+
+  do {
+    const result = await doc.send(
+      new ScanCommand({
+        TableName: config.sitesTable,
+        FilterExpression: "customDomainStatus = :s",
+        ExpressionAttributeValues: { ":s": status },
+        ExclusiveStartKey: lastKey,
+      }),
+    );
+    items.push(...((result.Items as Site[]) ?? []));
+    lastKey = result.LastEvaluatedKey as
+      | Record<string, unknown>
+      | undefined;
+  } while (lastKey);
+
+  return items;
 }
 
 export async function getTemplatesByAuthor(

@@ -23,8 +23,8 @@ describe("AppStack", () => {
 
   const template = Template.fromStack(stack);
 
-  it("creates Lambda functions (3 app + 2 CDK custom resources)", () => {
-    template.resourceCountIs("AWS::Lambda::Function", 5);
+  it("creates Lambda functions (4 app + 2 CDK custom resources)", () => {
+    template.resourceCountIs("AWS::Lambda::Function", 6);
   });
 
   it("creates API Lambda with correct config", () => {

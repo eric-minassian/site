@@ -48,7 +48,7 @@ describe("StatefulStack", () => {
     template.resourceCountIs("AWS::S3::BucketPolicy", 2);
   });
 
-  it("adds username and keyHash GSIs to Sites table", () => {
+  it("adds username, keyHash, and customDomain GSIs to Sites table", () => {
     template.hasResourceProperties("AWS::DynamoDB::Table", {
       KeySchema: [{ AttributeName: "siteId", KeyType: "HASH" }],
       GlobalSecondaryIndexes: [
@@ -60,6 +60,11 @@ describe("StatefulStack", () => {
         {
           IndexName: "KeyHashIndex",
           KeySchema: [{ AttributeName: "keyHash", KeyType: "HASH" }],
+          Projection: { ProjectionType: "ALL" },
+        },
+        {
+          IndexName: "CustomDomainIndex",
+          KeySchema: [{ AttributeName: "customDomain", KeyType: "HASH" }],
           Projection: { ProjectionType: "ALL" },
         },
       ],
