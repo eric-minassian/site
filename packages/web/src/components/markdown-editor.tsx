@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, placeholder } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -140,17 +140,22 @@ function insertImageMarkdown(view: EditorView, alt: string, url: string) {
   view.focus();
 }
 
+export interface MarkdownEditorHandle {
+  /** Replace the entire editor content programmatically. */
+  replaceAll: (content: string) => void;
+}
+
 interface MarkdownEditorProps {
   initialValue: string;
   onChange: (value: string) => void;
   onImageUpload?: (file: File) => Promise<string>;
 }
 
-export function MarkdownEditor({
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({
   initialValue,
   onChange,
   onImageUpload,
-}: MarkdownEditorProps) {
+}: MarkdownEditorProps, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -161,6 +166,16 @@ export function MarkdownEditor({
 
   onChangeRef.current = onChange;
   onImageUploadRef.current = onImageUpload;
+
+  useImperativeHandle(ref, () => ({
+    replaceAll(content: string) {
+      const view = viewRef.current;
+      if (!view) return;
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: content },
+      });
+    },
+  }));
 
   const handleUpload = useCallback(async (file: File) => {
     const view = viewRef.current;
@@ -348,4 +363,4 @@ export function MarkdownEditor({
       <div ref={containerRef} className="min-h-0 flex-1" />
     </div>
   );
-}
+});

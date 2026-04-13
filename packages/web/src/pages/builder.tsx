@@ -11,7 +11,8 @@ import {
 } from "../lib/api";
 import type { TemplateSummary, TemplateDetail } from "../lib/api";
 import { combineTemplateCss } from "../lib/template-utils";
-import { MarkdownEditor } from "../components/markdown-editor";
+import { FrontmatterPanel } from "../components/frontmatter-panel";
+import { MarkdownEditor, type MarkdownEditorHandle } from "../components/markdown-editor";
 import { LivePreview } from "../components/live-preview";
 import { TemplateControls } from "../components/template-controls";
 
@@ -44,6 +45,7 @@ export default function BuilderPage() {
   >({});
   const [templateLoading, setTemplateLoading] = useState(false);
 
+  const editorRef = useRef<MarkdownEditorHandle>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const templateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestMarkdownRef = useRef<string>("");
@@ -149,6 +151,20 @@ export default function BuilderPage() {
     (value: string) => {
       latestMarkdownRef.current = value;
       setMarkdown(value);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        saveMarkdown(latestMarkdownRef.current);
+      }, AUTO_SAVE_DELAY);
+    },
+    [saveMarkdown],
+  );
+
+  // Called by FrontmatterPanel — updates both state and CodeMirror editor
+  const handleFrontmatterChange = useCallback(
+    (value: string) => {
+      latestMarkdownRef.current = value;
+      setMarkdown(value);
+      editorRef.current?.replaceAll(value);
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         saveMarkdown(latestMarkdownRef.current);
@@ -283,12 +299,19 @@ export default function BuilderPage() {
       </div>
       <div ref={containerRef} className="relative flex min-h-0 flex-1">
         {dragging && <div className="fixed inset-0 z-50 cursor-col-resize" />}
-        <div className="min-w-0 p-4" style={{ width: `${splitPercent}%` }}>
-          <MarkdownEditor
-            initialValue={markdown ?? ""}
-            onChange={handleMarkdownChange}
-            onImageUpload={handleImageUpload}
+        <div className="flex min-w-0 flex-col" style={{ width: `${splitPercent}%` }}>
+          <FrontmatterPanel
+            markdown={markdown ?? ""}
+            onMarkdownChange={handleFrontmatterChange}
           />
+          <div className="min-h-0 flex-1 p-4">
+            <MarkdownEditor
+              ref={editorRef}
+              initialValue={markdown ?? ""}
+              onChange={handleMarkdownChange}
+              onImageUpload={handleImageUpload}
+            />
+          </div>
         </div>
         <div
           className="w-1.5 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-primary/20 active:bg-primary/30"
