@@ -3,7 +3,6 @@ import { NagSuppressions } from "cdk-nag";
 import {
   CodePipeline,
   CodePipelineSource,
-  ManualApprovalStep,
   ShellStep,
 } from "aws-cdk-lib/pipelines";
 import type { Construct } from "constructs";
@@ -75,14 +74,12 @@ export class PipelineStack extends cdk.Stack {
 
     pipeline.addStage(devStage);
 
-    // Prod stage — manual approval gate
+    // Prod stage — auto-deploy
     const prodStage = new AppStage(this, "Prod", {
       env: props.prodConfig.env,
       config: props.prodConfig,
     });
 
-    pipeline.addStage(prodStage, {
-      pre: [new ManualApprovalStep("PromoteToProd")],
-    });
+    pipeline.addStage(prodStage);
   }
 }
