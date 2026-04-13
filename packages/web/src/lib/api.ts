@@ -1,5 +1,36 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
+// ---------------------------------------------------------------------------
+// Template types
+// ---------------------------------------------------------------------------
+
+export interface TemplateVariable {
+  name: string;
+  label: string;
+  type: "color" | "font" | "number" | "select" | "text";
+  default: string;
+  options?: string[];
+}
+
+export interface TemplateSummary {
+  templateId: string;
+  authorSiteId: string;
+  slug: string;
+  name: string;
+  description: string;
+  variables: TemplateVariable[];
+  isCurated: boolean;
+  forkedFromId: string | null;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TemplateDetail extends TemplateSummary {
+  html: string;
+  css: string;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -60,7 +91,7 @@ export function updateSite(
   updates: {
     title?: string;
     markdown?: string;
-    templateId?: string;
+    templateId?: string | null;
     templateVariables?: Record<string, string>;
   },
 ) {
@@ -148,4 +179,37 @@ export async function uploadImage(
   }
 
   return imageUrl;
+}
+
+// ---------------------------------------------------------------------------
+// Templates
+// ---------------------------------------------------------------------------
+
+export function getTemplates(params?: {
+  search?: string;
+  filter?: string;
+  sort?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.search) qs.set("search", params.search);
+  if (params?.filter) qs.set("filter", params.filter);
+  if (params?.sort) qs.set("sort", params.sort);
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const query = qs.toString();
+  return request<{
+    items: TemplateSummary[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }>(`/api/templates${query ? `?${query}` : ""}`);
+}
+
+export function getTemplateBySlug(slug: string) {
+  return request<TemplateDetail>(
+    `/api/templates/${encodeURIComponent(slug)}`,
+  );
 }

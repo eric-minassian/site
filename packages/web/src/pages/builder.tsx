@@ -1,16 +1,33 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
-import { getSite, updateSite, uploadImage } from "../lib/api";
+import {
+  getSite,
+  updateSite,
+  uploadImage,
+  getTemplates,
+  getTemplateBySlug,
+} from "../lib/api";
+import type { TemplateSummary, TemplateDetail } from "../lib/api";
 import { MarkdownEditor } from "../components/markdown-editor";
 import { LivePreview } from "../components/live-preview";
+import { TemplateControls } from "../components/template-controls";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 const AUTO_SAVE_DELAY = 1000;
 const MIN_PANE_PERCENT = 20;
 const MAX_PANE_PERCENT = 80;
+
+function combineTemplateCss(html: string, css: string): string {
+  if (!css) return html;
+  const styleTag = `<style>${css}</style>`;
+  if (html.includes("</head>")) {
+    return html.replace("</head>", `${styleTag}\n</head>`);
+  }
+  return `${styleTag}\n${html}`;
+}
 
 export default function BuilderPage() {
   const { token, isAuthenticated } = useAuth();
@@ -23,7 +40,20 @@ export default function BuilderPage() {
   const [splitPercent, setSplitPercent] = useState(50);
   const [dragging, setDragging] = useState(false);
 
+  // Template state
+  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<TemplateDetail | null>(null);
+  const [templateVariables, setTemplateVariables] = useState<
+    Record<string, string>
+  >({});
+  const [templateLoading, setTemplateLoading] = useState(false);
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const templateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestMarkdownRef = useRef<string>("");
   const savingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,12 +67,30 @@ export default function BuilderPage() {
     let cancelled = false;
     async function load() {
       try {
-        const site = await getSite(token!);
-        if (!cancelled) {
-          setMarkdown(site.markdown);
-          latestMarkdownRef.current = site.markdown;
-          setLoading(false);
+        const [site, templatesRes] = await Promise.all([
+          getSite(token!),
+          getTemplates({ limit: 50 }),
+        ]);
+        if (cancelled) return;
+
+        setMarkdown(site.markdown);
+        latestMarkdownRef.current = site.markdown;
+        setTemplates(templatesRes.items);
+        setSelectedTemplateId(site.templateId);
+        setTemplateVariables(site.templateVariables);
+
+        // Fetch full template details if site has one selected
+        if (site.templateId) {
+          const tmpl = templatesRes.items.find(
+            (t) => t.templateId === site.templateId,
+          );
+          if (tmpl) {
+            const detail = await getTemplateBySlug(tmpl.slug);
+            if (!cancelled) setSelectedTemplate(detail);
+          }
         }
+
+        setLoading(false);
       } catch (err) {
         if (!cancelled) {
           setLoadError(
@@ -58,24 +106,43 @@ export default function BuilderPage() {
     };
   }, [token, isAuthenticated, navigate]);
 
-  const save = useCallback(
+  const showSaved = useCallback(() => {
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus((s) => (s === "saved" ? "idle" : s)), 2000);
+  }, []);
+
+  const saveMarkdown = useCallback(
     async (value: string) => {
       if (!token || savingRef.current) return;
       savingRef.current = true;
       setSaveStatus("saving");
       try {
         await updateSite(token, { markdown: value });
-        setSaveStatus("saved");
-        setTimeout(() => {
-          setSaveStatus((s) => (s === "saved" ? "idle" : s));
-        }, 2000);
+        showSaved();
       } catch {
         setSaveStatus("error");
       } finally {
         savingRef.current = false;
       }
     },
-    [token],
+    [token, showSaved],
+  );
+
+  const saveTemplateSettings = useCallback(
+    async (
+      templateId: string | null,
+      variables: Record<string, string>,
+    ) => {
+      if (!token) return;
+      setSaveStatus("saving");
+      try {
+        await updateSite(token, { templateId, templateVariables: variables });
+        showSaved();
+      } catch {
+        setSaveStatus("error");
+      }
+    },
+    [token, showSaved],
   );
 
   const handleImageUpload = useCallback(
@@ -86,17 +153,73 @@ export default function BuilderPage() {
     [token],
   );
 
-  const handleChange = useCallback(
+  const handleMarkdownChange = useCallback(
     (value: string) => {
       latestMarkdownRef.current = value;
       setMarkdown(value);
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
-        save(latestMarkdownRef.current);
+        saveMarkdown(latestMarkdownRef.current);
       }, AUTO_SAVE_DELAY);
     },
-    [save],
+    [saveMarkdown],
   );
+
+  const handleSelectTemplate = useCallback(
+    async (templateId: string | null) => {
+      setSelectedTemplateId(templateId);
+
+      if (!templateId) {
+        setSelectedTemplate(null);
+        setTemplateVariables({});
+        saveTemplateSettings(null, {});
+        return;
+      }
+
+      const tmpl = templates.find((t) => t.templateId === templateId);
+      if (!tmpl) return;
+
+      setTemplateLoading(true);
+      try {
+        const detail = await getTemplateBySlug(tmpl.slug);
+        setSelectedTemplate(detail);
+
+        // Initialize with template defaults
+        const defaults: Record<string, string> = {};
+        for (const v of detail.variables) {
+          defaults[v.name] = v.default;
+        }
+        setTemplateVariables(defaults);
+        saveTemplateSettings(templateId, defaults);
+      } catch {
+        // Keep previous state on error
+      } finally {
+        setTemplateLoading(false);
+      }
+    },
+    [templates, saveTemplateSettings],
+  );
+
+  const handleVariableChange = useCallback(
+    (name: string, value: string) => {
+      setTemplateVariables((prev) => {
+        const next = { ...prev, [name]: value };
+
+        if (templateTimerRef.current) clearTimeout(templateTimerRef.current);
+        templateTimerRef.current = setTimeout(() => {
+          saveTemplateSettings(selectedTemplateId, next);
+        }, AUTO_SAVE_DELAY);
+
+        return next;
+      });
+    },
+    [selectedTemplateId, saveTemplateSettings],
+  );
+
+  const previewTemplate = useMemo(() => {
+    if (!selectedTemplate) return undefined;
+    return combineTemplateCss(selectedTemplate.html, selectedTemplate.css);
+  }, [selectedTemplate]);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -126,15 +249,17 @@ export default function BuilderPage() {
     document.body.style.userSelect = "none";
   }, []);
 
-  // Flush pending save on unmount
+  // Flush pending saves on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
-        // Fire final save synchronously if there's a pending change
         if (latestMarkdownRef.current !== markdown) {
-          save(latestMarkdownRef.current);
+          saveMarkdown(latestMarkdownRef.current);
         }
+      }
+      if (templateTimerRef.current) {
+        clearTimeout(templateTimerRef.current);
       }
     };
     // Only run cleanup on unmount
@@ -166,13 +291,10 @@ export default function BuilderPage() {
       </div>
       <div ref={containerRef} className="relative flex min-h-0 flex-1">
         {dragging && <div className="fixed inset-0 z-50 cursor-col-resize" />}
-        <div
-          className="min-w-0 p-4"
-          style={{ width: `${splitPercent}%` }}
-        >
+        <div className="min-w-0 p-4" style={{ width: `${splitPercent}%` }}>
           <MarkdownEditor
             initialValue={markdown ?? ""}
-            onChange={handleChange}
+            onChange={handleMarkdownChange}
             onImageUpload={handleImageUpload}
           />
         </div>
@@ -181,10 +303,25 @@ export default function BuilderPage() {
           onMouseDown={handleDragStart}
         />
         <div
-          className="min-w-0 p-4"
+          className="flex min-w-0 flex-col"
           style={{ width: `${100 - splitPercent}%` }}
         >
-          <LivePreview markdown={markdown ?? ""} />
+          <TemplateControls
+            templates={templates}
+            selectedTemplateId={selectedTemplateId}
+            selectedTemplate={selectedTemplate}
+            variables={templateVariables}
+            onSelectTemplate={handleSelectTemplate}
+            onVariableChange={handleVariableChange}
+            loading={templateLoading}
+          />
+          <div className="min-h-0 flex-1 p-4">
+            <LivePreview
+              markdown={markdown ?? ""}
+              template={previewTemplate}
+              variables={templateVariables}
+            />
+          </div>
         </div>
       </div>
     </div>

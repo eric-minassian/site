@@ -192,7 +192,7 @@ graph TD
 - [x] **T12: Builder — Live Preview**
   Sandboxed iframe preview pane. Uses `@site/renderer` to render markdown + template client-side on every change. Debounced rendering (150ms). Viewport size toggle (desktop/tablet/mobile). Split-pane resizable layout.
 
-- [ ] **T13: Builder — Template Controls**
+- [x] **T13: Builder — Template Controls**
   Fetch current template's variable definitions. Auto-generate control UI: color pickers for `color` type, font selector for `font`, number inputs, dropdowns for `select`, text inputs for `text`. Changes feed into preview in real time. Save variable values to site settings.
 
 - [ ] **T14: Theme Marketplace — Browse**
