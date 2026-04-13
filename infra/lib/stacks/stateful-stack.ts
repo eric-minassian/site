@@ -88,7 +88,30 @@ export class StatefulStack extends cdk.Stack implements StatefulResources {
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
+      cors: [
+        {
+          allowedHeaders: ["*"],
+          allowedMethods: [s3.HttpMethods.PUT],
+          allowedOrigins: ["*"],
+          maxAge: 3600,
+        },
+      ],
     });
+
+    this.assetsBucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: "AllowCloudFrontOAC",
+        effect: iam.Effect.ALLOW,
+        actions: ["s3:GetObject"],
+        principals: [new iam.ServicePrincipal("cloudfront.amazonaws.com")],
+        resources: [this.assetsBucket.arnForObjects("*")],
+        conditions: {
+          StringEquals: {
+            "aws:SourceAccount": cdk.Aws.ACCOUNT_ID,
+          },
+        },
+      }),
+    );
 
     this.sitesBucket = new s3.Bucket(this, "SitesBucket", {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,

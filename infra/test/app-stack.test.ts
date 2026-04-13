@@ -82,8 +82,8 @@ describe("AppStack", () => {
     });
   });
 
-  it("creates 3 CloudFront distributions (API, Sites, Frontend)", () => {
-    template.resourceCountIs("AWS::CloudFront::Distribution", 3);
+  it("creates 4 CloudFront distributions (API, Sites, Assets, Frontend)", () => {
+    template.resourceCountIs("AWS::CloudFront::Distribution", 4);
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: {
         DefaultCacheBehavior: {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, placeholder } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -17,6 +17,7 @@ import {
   Heading3,
   Link,
   Image,
+  Loader2,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -124,35 +125,72 @@ const toolbarActions: ToolbarAction[] = [
       view.focus();
     },
   },
-  {
-    icon: Image,
-    label: "Image",
-    action: (view) => {
-      const { from, to } = view.state.selection.main;
-      const selected = view.state.sliceDoc(from, to);
-      const alt = selected || "alt text";
-      view.dispatch({
-        changes: { from, to, insert: `![${alt}](url)` },
-        selection: {
-          anchor: from + alt.length + 4,
-          head: from + alt.length + 7,
-        },
-      });
-      view.focus();
-    },
-  },
 ];
+
+const IMAGE_ACCEPT = "image/png,image/jpeg,image/gif,image/webp,image/svg+xml";
+
+function isImageFile(file: File): boolean {
+  return IMAGE_ACCEPT.split(",").includes(file.type);
+}
+
+function insertImageMarkdown(view: EditorView, alt: string, url: string) {
+  const { from } = view.state.selection.main;
+  const insert = `![${alt}](${url})`;
+  view.dispatch({ changes: { from, insert } });
+  view.focus();
+}
 
 interface MarkdownEditorProps {
   initialValue: string;
   onChange: (value: string) => void;
+  onImageUpload?: (file: File) => Promise<string>;
 }
 
-export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) {
+export function MarkdownEditor({
+  initialValue,
+  onChange,
+  onImageUpload,
+}: MarkdownEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const onChangeRef = useRef(onChange);
+  const onImageUploadRef = useRef(onImageUpload);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   onChangeRef.current = onChange;
+  onImageUploadRef.current = onImageUpload;
+
+  const handleUpload = useCallback(async (file: File) => {
+    const view = viewRef.current;
+    const uploadFn = onImageUploadRef.current;
+    if (!view || !uploadFn) return;
+
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const imageUrl = await uploadFn(file);
+      const alt = file.name.replace(/\.[^.]+$/, "");
+      insertImageMarkdown(view, alt, imageUrl);
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? err.message : "Image upload failed",
+      );
+      setTimeout(() => setUploadError(null), 4000);
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
+  const handleFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files) return;
+      const imageFile = Array.from(files).find(isImageFile);
+      if (imageFile) handleUpload(imageFile);
+    },
+    [handleUpload],
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -172,6 +210,73 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
           if (update.docChanged) {
             onChangeRef.current(update.state.doc.toString());
           }
+        }),
+        EditorView.domEventHandlers({
+          drop(event) {
+            const files = event.dataTransfer?.files;
+            if (files && Array.from(files).some(isImageFile)) {
+              event.preventDefault();
+              const imageFile = Array.from(files).find(isImageFile);
+              if (imageFile && onImageUploadRef.current) {
+                // Use setTimeout to avoid calling setState during render
+                setTimeout(() => {
+                  const view = viewRef.current;
+                  const uploadFn = onImageUploadRef.current;
+                  if (!view || !uploadFn) return;
+                  setUploading(true);
+                  setUploadError(null);
+                  uploadFn(imageFile)
+                    .then((url) => {
+                      const alt = imageFile.name.replace(/\.[^.]+$/, "");
+                      insertImageMarkdown(view, alt, url);
+                    })
+                    .catch((err) => {
+                      setUploadError(
+                        err instanceof Error
+                          ? err.message
+                          : "Image upload failed",
+                      );
+                      setTimeout(() => setUploadError(null), 4000);
+                    })
+                    .finally(() => setUploading(false));
+                }, 0);
+              }
+              return true;
+            }
+            return false;
+          },
+          paste(event) {
+            const files = event.clipboardData?.files;
+            if (files && Array.from(files).some(isImageFile)) {
+              event.preventDefault();
+              const imageFile = Array.from(files).find(isImageFile);
+              if (imageFile && onImageUploadRef.current) {
+                setTimeout(() => {
+                  const view = viewRef.current;
+                  const uploadFn = onImageUploadRef.current;
+                  if (!view || !uploadFn) return;
+                  setUploading(true);
+                  setUploadError(null);
+                  uploadFn(imageFile)
+                    .then((url) => {
+                      const alt = imageFile.name.replace(/\.[^.]+$/, "");
+                      insertImageMarkdown(view, alt, url);
+                    })
+                    .catch((err) => {
+                      setUploadError(
+                        err instanceof Error
+                          ? err.message
+                          : "Image upload failed",
+                      );
+                      setTimeout(() => setUploadError(null), 4000);
+                    })
+                    .finally(() => setUploading(false));
+                }, 0);
+              }
+              return true;
+            }
+            return false;
+          },
         }),
       ],
     });
@@ -212,7 +317,34 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
             <action.icon className="h-4 w-4" />
           </Button>
         ))}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => fileInputRef.current?.click()}
+          title="Upload image"
+          disabled={uploading || !onImageUpload}
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Image className="h-4 w-4" />
+          )}
+        </Button>
+        {uploadError && (
+          <span className="ml-2 text-xs text-destructive">{uploadError}</span>
+        )}
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={IMAGE_ACCEPT}
+        className="hidden"
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
       <div ref={containerRef} className="min-h-0 flex-1" />
     </div>
   );

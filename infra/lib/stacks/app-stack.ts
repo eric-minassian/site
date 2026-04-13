@@ -255,6 +255,46 @@ export class AppStack extends cdk.Stack {
       sitesDistributionProps,
     );
 
+    // --- Assets CloudFront Distribution ---
+
+    const assetsCachePolicy = new cloudfront.CachePolicy(
+      this,
+      "AssetsCachePolicy",
+      {
+        comment: "Immutable cache for content-addressed user assets",
+        defaultTtl: cdk.Duration.days(365),
+        minTtl: cdk.Duration.days(365),
+        maxTtl: cdk.Duration.days(365),
+        enableAcceptEncodingGzip: true,
+        enableAcceptEncodingBrotli: true,
+      },
+    );
+
+    const assetsDistribution = new cloudfront.Distribution(
+      this,
+      "AssetsDistribution",
+      {
+        defaultBehavior: {
+          origin: origins.S3BucketOrigin.withOriginAccessControl(
+            s3.Bucket.fromBucketName(
+              this,
+              "AssetsBucketRef",
+              props.assetsBucket.bucketName,
+            ),
+          ),
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: assetsCachePolicy,
+        },
+      },
+    );
+
+    apiHandler.addEnvironment(
+      "ASSETS_CDN_URL",
+      `https://${assetsDistribution.distributionDomainName}`,
+    );
+
     // --- Frontend S3 Bucket ---
 
     const frontendBucket = new s3.Bucket(this, "FrontendBucket", {
@@ -412,6 +452,11 @@ export class AppStack extends cdk.Stack {
       description: "Frontend CloudFront distribution URL",
     });
 
+    new cdk.CfnOutput(this, "AssetsDistributionUrl", {
+      value: `https://${assetsDistribution.distributionDomainName}`,
+      description: "Assets CloudFront distribution URL",
+    });
+
     // --- cdk-nag suppressions ---
 
     NagSuppressions.addStackSuppressions(this, [
@@ -468,6 +513,29 @@ export class AppStack extends cdk.Stack {
         id: "AwsSolutions-CFR2",
         reason:
           "WAF not required for sites distribution; static content only with CSP script-src 'none'",
+      },
+      {
+        id: "AwsSolutions-CFR3",
+        reason:
+          "Access logging not enabled for cost optimization; can be enabled for debugging when needed",
+      },
+      {
+        id: "AwsSolutions-CFR4",
+        reason:
+          "Using default CloudFront domain without custom certificate; TLS 1.2 enforced when custom domain is added",
+      },
+    ]);
+
+    NagSuppressions.addResourceSuppressions(assetsDistribution, [
+      {
+        id: "AwsSolutions-CFR1",
+        reason:
+          "WAF not required for assets distribution; content-addressed immutable images only",
+      },
+      {
+        id: "AwsSolutions-CFR2",
+        reason:
+          "WAF not required for assets distribution; content-addressed immutable images only",
       },
       {
         id: "AwsSolutions-CFR3",

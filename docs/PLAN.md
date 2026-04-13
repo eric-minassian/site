@@ -181,7 +181,7 @@ graph TD
   - Response headers policy (security headers)
   - Wire API origin as a `/api/*` behavior on the same distribution (or configure CORS on the API distribution) so the frontend can call the API without cross-origin issues
 
-- [ ] **T17: Image Upload**
+- [x] **T17: Image Upload**
   API endpoint that returns a presigned S3 URL. Content-addressed paths (`assets/{hash}.{ext}`) for immutable caching. Frontend drag-and-drop or file picker in markdown editor. On upload, insert markdown image syntax with CDN URL. Enforce file size limit (2MB per file, 10MB total per site). Allowed types: png, jpg, gif, webp, svg.
 
 ### Phase 3 — Builder, Marketplace, Build Pipeline (parallel, needs Phase 2)

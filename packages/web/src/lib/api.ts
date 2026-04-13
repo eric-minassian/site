@@ -89,3 +89,63 @@ export function regeneratePassphrase(token: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+]);
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+
+function requestImageUpload(
+  token: string,
+  hash: string,
+  contentType: string,
+  size: number,
+) {
+  return request<{ uploadUrl: string; imageUrl: string }>("/api/images", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ hash, contentType, size }),
+  });
+}
+
+export async function uploadImage(
+  token: string,
+  file: File,
+): Promise<string> {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    throw new Error("File type not allowed. Use PNG, JPEG, GIF, WebP, or SVG.");
+  }
+  if (file.size > MAX_IMAGE_SIZE) {
+    throw new Error("File too large. Maximum size is 2MB.");
+  }
+
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  const hash = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  const { uploadUrl, imageUrl } = await requestImageUpload(
+    token,
+    hash,
+    file.type,
+    file.size,
+  );
+
+  const uploadRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error("Failed to upload image to storage");
+  }
+
+  return imageUrl;
+}

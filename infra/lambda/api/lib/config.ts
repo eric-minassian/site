@@ -28,4 +28,7 @@ export const config = {
   get reportsTopicArn() {
     return env("REPORTS_TOPIC_ARN");
   },
+  get assetsCdnUrl() {
+    return env("ASSETS_CDN_URL");
+  },
 };

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
-import { getSite, updateSite } from "../lib/api";
+import { getSite, updateSite, uploadImage } from "../lib/api";
 import { MarkdownEditor } from "../components/markdown-editor";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -72,6 +72,14 @@ export default function BuilderPage() {
     [token],
   );
 
+  const handleImageUpload = useCallback(
+    async (file: File) => {
+      if (!token) throw new Error("Not authenticated");
+      return uploadImage(token, file);
+    },
+    [token],
+  );
+
   const handleChange = useCallback(
     (value: string) => {
       latestMarkdownRef.current = value;
@@ -122,7 +130,11 @@ export default function BuilderPage() {
         <SaveIndicator status={saveStatus} />
       </div>
       <div className="min-h-0 flex-1 p-4">
-        <MarkdownEditor initialValue={markdown ?? ""} onChange={handleChange} />
+        <MarkdownEditor
+          initialValue={markdown ?? ""}
+          onChange={handleChange}
+          onImageUpload={handleImageUpload}
+        />
       </div>
     </div>
   );

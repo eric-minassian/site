@@ -8,6 +8,7 @@ import {
   handleRegeneratePassphrase,
   handleUpdateSite,
 } from "./routes/sites";
+import { handleRequestUpload } from "./routes/images";
 import {
   handleCreateTemplate,
   handleDeleteTemplate,
@@ -65,6 +66,9 @@ const routes: Route[] = [
     "/api/site/regenerate-passphrase",
     handleRegeneratePassphrase,
   ),
+
+  // Image routes
+  buildRoute("POST", "/api/images", handleRequestUpload),
 
   // Template routes (order matters: specific patterns before parameterized)
   buildRoute("GET", "/api/templates", handleListTemplates),
