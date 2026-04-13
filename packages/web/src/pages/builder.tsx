@@ -4,10 +4,13 @@ import { CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { getSite, updateSite, uploadImage } from "../lib/api";
 import { MarkdownEditor } from "../components/markdown-editor";
+import { LivePreview } from "../components/live-preview";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 const AUTO_SAVE_DELAY = 1000;
+const MIN_PANE_PERCENT = 20;
+const MAX_PANE_PERCENT = 80;
 
 export default function BuilderPage() {
   const { token, isAuthenticated } = useAuth();
@@ -17,10 +20,13 @@ export default function BuilderPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [splitPercent, setSplitPercent] = useState(50);
+  const [dragging, setDragging] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestMarkdownRef = useRef<string>("");
   const savingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -83,6 +89,7 @@ export default function BuilderPage() {
   const handleChange = useCallback(
     (value: string) => {
       latestMarkdownRef.current = value;
+      setMarkdown(value);
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         save(latestMarkdownRef.current);
@@ -90,6 +97,34 @@ export default function BuilderPage() {
     },
     [save],
   );
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+    setDragging(true);
+
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitPercent(
+        Math.min(MAX_PANE_PERCENT, Math.max(MIN_PANE_PERCENT, percent)),
+      );
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      setDragging(false);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
 
   // Flush pending save on unmount
   useEffect(() => {
@@ -129,12 +164,28 @@ export default function BuilderPage() {
         <h1 className="text-lg font-semibold">Editor</h1>
         <SaveIndicator status={saveStatus} />
       </div>
-      <div className="min-h-0 flex-1 p-4">
-        <MarkdownEditor
-          initialValue={markdown ?? ""}
-          onChange={handleChange}
-          onImageUpload={handleImageUpload}
+      <div ref={containerRef} className="relative flex min-h-0 flex-1">
+        {dragging && <div className="fixed inset-0 z-50 cursor-col-resize" />}
+        <div
+          className="min-w-0 p-4"
+          style={{ width: `${splitPercent}%` }}
+        >
+          <MarkdownEditor
+            initialValue={markdown ?? ""}
+            onChange={handleChange}
+            onImageUpload={handleImageUpload}
+          />
+        </div>
+        <div
+          className="w-1.5 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-primary/20 active:bg-primary/30"
+          onMouseDown={handleDragStart}
         />
+        <div
+          className="min-w-0 p-4"
+          style={{ width: `${100 - splitPercent}%` }}
+        >
+          <LivePreview markdown={markdown ?? ""} />
+        </div>
       </div>
     </div>
   );
