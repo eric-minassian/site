@@ -32,6 +32,7 @@ export interface AppStackProps extends cdk.StackProps {
 
 export class AppStack extends cdk.Stack {
   readonly apiUrl: cdk.CfnOutput;
+  readonly frontendUrl: cdk.CfnOutput;
 
   constructor(scope: Construct, id: string, props: AppStackProps) {
     super(scope, id, props);
@@ -645,7 +646,7 @@ export class AppStack extends cdk.Stack {
       description: "Sites CloudFront distribution URL",
     });
 
-    new cdk.CfnOutput(this, "FrontendDistributionUrl", {
+    this.frontendUrl = new cdk.CfnOutput(this, "FrontendDistributionUrl", {
       value: `https://${frontendDistribution.distributionDomainName}`,
       description: "Frontend CloudFront distribution URL",
     });

@@ -66,13 +66,26 @@ export class PipelineStack extends cdk.Stack {
       },
     ]);
 
-    // Dev stage — auto-deploy
+    // Dev stage — auto-deploy with post-deploy E2E tests
     const devStage = new AppStage(this, "Dev", {
       env: props.devConfig.env,
       config: props.devConfig,
     });
 
-    pipeline.addStage(devStage);
+    const e2eStep = new ShellStep("E2E", {
+      envFromCfnOutputs: {
+        BASE_URL: devStage.frontendUrl,
+      },
+      commands: [
+        "n 22",
+        "npm install -g pnpm",
+        "pnpm install --frozen-lockfile",
+        "cd e2e && npx playwright install --with-deps chromium",
+        "cd e2e && npx playwright test",
+      ],
+    });
+
+    pipeline.addStage(devStage, { post: [e2eStep] });
 
     // Prod stage — auto-deploy
     const prodStage = new AppStage(this, "Prod", {

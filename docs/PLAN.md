@@ -223,5 +223,5 @@ graph TD
 
 ### Phase 5 — Testing (needs Phase 4)
 
-- [ ] **T23: E2E Tests**
+- [x] **T23: E2E Tests**
   Playwright tests covering critical flows: create site + save passphrase, log in with 12 words, write markdown in builder, select template, publish site, verify live site renders correctly (and CSP headers present), marketplace browse and template apply, custom domain setup flow, abuse report submission. Integrated as post-deploy step in CDK Pipeline dev stage.

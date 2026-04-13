@@ -10,6 +10,7 @@ export interface AppStageProps extends cdk.StageProps {
 
 export class AppStage extends cdk.Stage {
   readonly apiUrl: cdk.CfnOutput;
+  readonly frontendUrl: cdk.CfnOutput;
 
   constructor(scope: Construct, id: string, props: AppStageProps) {
     super(scope, id, props);
@@ -32,5 +33,6 @@ export class AppStage extends cdk.Stage {
     app.addDependency(stateful);
 
     this.apiUrl = app.apiUrl;
+    this.frontendUrl = app.frontendUrl;
   }
 }

@@ -4,8 +4,9 @@
   "description": "Free managed personal-site platform",
   "scripts": {
     "typecheck": "pnpm -r run typecheck",
-    "test": "pnpm -r run test",
-    "build": "pnpm -r run build"
+    "test": "pnpm -r --filter '!@site/e2e' run test",
+    "test:e2e": "pnpm --filter @site/e2e run test",
+    "build": "pnpm -r --filter '!@site/e2e' run build"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -1,3 +1,4 @@
 packages:
   - infra
   - packages/*
+  - e2e
